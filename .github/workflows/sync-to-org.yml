@@ -1,0 +1,36 @@
+name: Sync to Organization
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: # cho phép chạy manual
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Create clean branch without excluded folders
+        run: |
+          # Tạo orphan branch sạch
+          git checkout --orphan sync-clean
+
+          # Xóa các folder không muốn sync
+          rm -rf _bmad-output .agent
+
+          # Commit lại
+          git add -A
+          git commit -m "Sync from private repo - $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+      - name: Push to organization repo
+        run: |
+          git remote add org https://x-access-token:${{ secrets.ORG_REPO_TOKEN }}@github.com/${{ vars.ORG_REPO }}.git
+          git push org sync-clean:main --force

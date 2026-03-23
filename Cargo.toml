@@ -1,0 +1,48 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/baseclaw",
+    "crates/baseclaw-core",
+    "crates/baseclaw-macros",
+    "crates/baseclaw-openai-compat",
+    "crates/baseclaw-anthropic",
+    "crates/baseclaw-openai",
+    "crates/baseclaw-steering",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.75"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/baseclaw/baseclaw"
+description = "A Rust AI Agent Framework — Simple by default, powerful when needed"
+
+[workspace.dependencies]
+# Core
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["full"] }
+tokio-stream = "0.1"
+async-trait = "0.1"
+thiserror = "2"
+tracing = "0.1"
+
+# Schema
+schemars = "0.8"
+
+# HTTP
+reqwest = { version = "0.12", features = ["json", "stream"] }
+
+# Proc macros
+syn = { version = "2", features = ["full"] }
+quote = "1"
+proc-macro2 = "1"
+
+# Workspace crates
+baseclaw-core = { path = "crates/baseclaw-core", version = "0.1.0" }
+baseclaw-macros = { path = "crates/baseclaw-macros", version = "0.1.0" }
+baseclaw-openai-compat = { path = "crates/baseclaw-openai-compat", version = "0.1.0" }
+baseclaw-anthropic = { path = "crates/baseclaw-anthropic", version = "0.1.0" }
+baseclaw-openai = { path = "crates/baseclaw-openai", version = "0.1.0" }
+baseclaw-steering = { path = "crates/baseclaw-steering", version = "0.1.0" }

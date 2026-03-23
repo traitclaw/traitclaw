@@ -1,0 +1,18 @@
+[package]
+name = "baseclaw"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "A Rust AI Agent Framework — Simple by default, powerful when needed"
+
+[dependencies]
+baseclaw-core = { workspace = true }
+baseclaw-macros = { workspace = true }
+schemars = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+[features]
+default = ["macros"]
+macros = []
