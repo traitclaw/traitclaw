@@ -15,8 +15,5 @@ Cargo.lock
 .DS_Store
 Thumbs.db
 
-# Agent
-.agent/
-
 # BMad output — tracked in private repo, excluded in org sync
 # _bmad-output/
