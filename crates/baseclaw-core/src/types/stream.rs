@@ -7,7 +7,11 @@ use tokio_stream::Stream;
 use crate::Result;
 
 /// Events emitted during streaming.
+///
+/// This enum is `#[non_exhaustive]` — new events (e.g., `Usage`, `Metadata`)
+/// may be added in future releases. Always include a wildcard arm when matching.
 #[derive(Debug, Clone)]
+#[non_exhaustive]
 pub enum StreamEvent {
     /// A chunk of text from the LLM.
     TextDelta(String),
@@ -26,6 +30,9 @@ pub enum StreamEvent {
         arguments_delta: String,
     },
     /// The stream has completed.
+    ///
+    /// Providers MUST emit `Done` as the final event. Consumers may use
+    /// `Done` to flush accumulated state (e.g. save to memory).
     Done,
 }
 

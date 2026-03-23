@@ -9,10 +9,12 @@ description = "A Rust AI Agent Framework — Simple by default, powerful when ne
 [dependencies]
 baseclaw-core = { workspace = true }
 baseclaw-macros = { workspace = true }
+baseclaw-openai-compat = { workspace = true, optional = true }
 schemars = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 
 [features]
-default = ["macros"]
+default = ["openai-compat", "macros"]
 macros = []
+openai-compat = ["dep:baseclaw-openai-compat"]

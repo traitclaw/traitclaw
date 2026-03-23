@@ -67,11 +67,9 @@ fn expand_tool(input: DeriveInput) -> syn::Result<TokenStream2> {
         })?;
     }
 
-    let description =
-        description.unwrap_or_else(|| to_title_case(&struct_name.to_string()));
+    let description = description.unwrap_or_else(|| to_title_case(&struct_name.to_string()));
 
-    let tool_name = name_override
-        .unwrap_or_else(|| to_snake_case(&struct_name.to_string()));
+    let tool_name = name_override.unwrap_or_else(|| to_snake_case(&struct_name.to_string()));
 
     let expanded = quote! {
         impl #struct_name {

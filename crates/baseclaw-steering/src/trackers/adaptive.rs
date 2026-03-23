@@ -58,8 +58,14 @@ impl TierConfig {
     pub fn for_tier(tier: &ModelTier) -> Self {
         match tier {
             ModelTier::Small => Self::small(),
-            ModelTier::Medium => Self::medium(),
             ModelTier::Large => Self::large(),
+            // Medium and any unknown future tiers (#[non_exhaustive]) get medium config
+            _ => {
+                tracing::warn!(
+                    "TierConfig::for_tier: unknown ModelTier variant, defaulting to Medium config"
+                );
+                Self::medium()
+            }
         }
     }
 }

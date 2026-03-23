@@ -3,7 +3,12 @@
 use serde::{Deserialize, Serialize};
 
 /// Role of a message in a conversation.
+///
+/// This enum is marked `#[non_exhaustive]` — new roles may be added in future
+/// releases (e.g., `Developer`, `Tool` variants from updated provider specs).
+/// Always include a wildcard arm in exhaustive matches.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[non_exhaustive]
 #[serde(rename_all = "lowercase")]
 pub enum MessageRole {
     /// System instructions.
@@ -71,6 +76,69 @@ mod tests {
     use super::*;
 
     #[test]
+    fn test_user_message_json_matches_openai_format() {
+        // AC-1: exact OpenAI wire format
+        let msg = Message::user("Hello");
+        let json = serde_json::to_string(&msg).unwrap();
+        assert_eq!(json, r#"{"role":"user","content":"Hello"}"#);
+    }
+
+    #[test]
+    fn test_system_message_json_format() {
+        let msg = Message::system("You are helpful");
+        let json = serde_json::to_string(&msg).unwrap();
+        assert_eq!(json, r#"{"role":"system","content":"You are helpful"}"#);
+    }
+
+    #[test]
+    fn test_assistant_message_json_format() {
+        let msg = Message::assistant("Hi there!");
+        let json = serde_json::to_string(&msg).unwrap();
+        assert_eq!(json, r#"{"role":"assistant","content":"Hi there!"}"#);
+    }
+
+    #[test]
+    fn test_tool_result_message_json_includes_tool_call_id() {
+        let msg = Message::tool_result("call_123", "42");
+        let json = serde_json::to_string(&msg).unwrap();
+        assert_eq!(
+            json,
+            r#"{"role":"tool","content":"42","tool_call_id":"call_123"}"#
+        );
+    }
+
+    #[test]
+    fn test_message_role_lowercase_serde() {
+        // AC-2: all 4 MessageRole variants serialize to lowercase
+        let cases = [
+            (MessageRole::System, "\"system\""),
+            (MessageRole::User, "\"user\""),
+            (MessageRole::Assistant, "\"assistant\""),
+            (MessageRole::Tool, "\"tool\""),
+        ];
+        for (role, expected) in &cases {
+            assert_eq!(&serde_json::to_string(role).unwrap(), expected);
+        }
+    }
+
+    #[test]
+    fn test_message_round_trip_deserialize() {
+        let original = Message::user("round trip");
+        let json = serde_json::to_string(&original).unwrap();
+        let decoded: Message = serde_json::from_str(&json).unwrap();
+        assert_eq!(decoded.role, original.role);
+        assert_eq!(decoded.content, original.content);
+    }
+
+    #[test]
+    fn test_tool_call_id_absent_when_none() {
+        let msg = Message::user("hello");
+        let json = serde_json::to_string(&msg).unwrap();
+        // skip_serializing_if ensures field is omitted
+        assert!(!json.contains("tool_call_id"), "got: {json}");
+    }
+
+    #[test]
     fn test_message_creation() {
         let msg = Message::user("Hello");
         assert_eq!(msg.role, MessageRole::User);
@@ -79,17 +147,9 @@ mod tests {
     }
 
     #[test]
-    fn test_tool_result_message() {
+    fn test_tool_result_message_fields() {
         let msg = Message::tool_result("call_123", "result");
         assert_eq!(msg.role, MessageRole::Tool);
         assert_eq!(msg.tool_call_id, Some("call_123".into()));
-    }
-
-    #[test]
-    fn test_message_serialization() {
-        let msg = Message::system("You are helpful");
-        let json = serde_json::to_string(&msg).unwrap();
-        assert!(json.contains("\"role\":\"system\""));
-        assert!(json.contains("\"content\":\"You are helpful\""));
     }
 }

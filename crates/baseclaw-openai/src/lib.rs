@@ -34,5 +34,5 @@
 mod models;
 pub mod structured;
 
-pub use models::{azure_openai, custom, groq, mistral, ollama, openai, together};
 pub use baseclaw_openai_compat::{OpenAiCompatConfig, OpenAiCompatProvider};
+pub use models::{azure_openai, custom, groq, mistral, ollama, openai, together};

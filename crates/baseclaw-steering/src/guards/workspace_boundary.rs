@@ -31,9 +31,7 @@ impl WorkspaceBoundaryGuard {
         }
         let canonical = path.canonicalize().unwrap_or_else(|_| path.to_path_buf());
         self.allowed_dirs.iter().any(|allowed| {
-            let canonical_allowed = allowed
-                .canonicalize()
-                .unwrap_or_else(|_| allowed.clone());
+            let canonical_allowed = allowed.canonicalize().unwrap_or_else(|_| allowed.clone());
             canonical.starts_with(&canonical_allowed)
         })
     }
@@ -78,10 +76,7 @@ impl Guard for WorkspaceBoundaryGuard {
     }
 }
 
-fn find_bad_path_in_value(
-    value: &serde_json::Value,
-    allowed: &[PathBuf],
-) -> Option<String> {
+fn find_bad_path_in_value(value: &serde_json::Value, allowed: &[PathBuf]) -> Option<String> {
     match value {
         serde_json::Value::String(s) => {
             if (s.contains('/') || s.contains('\\')) && !s.starts_with("http") {
@@ -98,8 +93,12 @@ fn find_bad_path_in_value(
             }
             None
         }
-        serde_json::Value::Object(map) => map.values().find_map(|v| find_bad_path_in_value(v, allowed)),
-        serde_json::Value::Array(arr) => arr.iter().find_map(|v| find_bad_path_in_value(v, allowed)),
+        serde_json::Value::Object(map) => map
+            .values()
+            .find_map(|v| find_bad_path_in_value(v, allowed)),
+        serde_json::Value::Array(arr) => {
+            arr.iter().find_map(|v| find_bad_path_in_value(v, allowed))
+        }
         _ => None,
     }
 }

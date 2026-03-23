@@ -1,6 +1,6 @@
 //! Agent runtime state for the steering system.
 
-use crate::traits::provider::ModelTier;
+use crate::types::model_info::ModelTier;
 
 /// Snapshot of the agent's runtime state.
 ///

@@ -1,7 +1,7 @@
 //! Streaming runtime — returns an async [`Stream`] of [`StreamEvent`]s.
 
-use tokio_stream::StreamExt;
 use tokio_stream::wrappers::ReceiverStream;
+use tokio_stream::StreamExt;
 
 use crate::agent::Agent;
 use crate::types::agent_state::AgentState;
@@ -15,7 +15,7 @@ pub type AgentStream =
     std::pin::Pin<Box<dyn tokio_stream::Stream<Item = Result<StreamEvent>> + Send>>;
 
 /// Run the agent and return a streaming response.
-pub(crate) fn stream_agent(agent: &Agent, input: String) -> AgentStream {
+pub(crate) fn stream_agent(agent: &Agent, input: String, session_id: String) -> AgentStream {
     let provider = agent.provider.clone();
     let memory = agent.memory.clone();
     let tools = agent.tools.clone();
@@ -26,9 +26,8 @@ pub(crate) fn stream_agent(agent: &Agent, input: String) -> AgentStream {
 
     tokio::spawn(async move {
         let model_info = provider.model_info();
-        let session_id = "default";
 
-        let mut messages = match memory.messages(session_id).await {
+        let mut messages = match memory.messages(&session_id).await {
             Ok(m) => m,
             Err(e) => {
                 let _ = tx.send(Err(e)).await;
@@ -44,7 +43,7 @@ pub(crate) fn stream_agent(agent: &Agent, input: String) -> AgentStream {
 
         let user_msg = Message::user(&input);
         messages.push(user_msg.clone());
-        if let Err(e) = memory.append(session_id, user_msg).await {
+        if let Err(e) = memory.append(&session_id, user_msg).await {
             let _ = tx.send(Err(e)).await;
             return;
         }
@@ -82,7 +81,7 @@ pub(crate) fn stream_agent(agent: &Agent, input: String) -> AgentStream {
                 }
             };
 
-            let done = forward_stream(stream, &tx, session_id, &memory).await;
+            let done = forward_stream(stream, &tx, &session_id, &memory).await;
             if done {
                 return;
             }
@@ -168,4 +167,136 @@ async fn forward_stream(
     }
 
     false // Tool calls received, continue loop
+}
+
+#[cfg(test)]
+mod tests {
+
+    use async_trait::async_trait;
+    use tokio_stream::StreamExt;
+
+    use crate::agent::Agent;
+    use crate::traits::provider::Provider;
+    use crate::types::completion::{CompletionRequest, CompletionResponse, ResponseContent, Usage};
+    use crate::types::model_info::{ModelInfo, ModelTier};
+    use crate::types::stream::{CompletionStream, StreamEvent};
+
+    /// Mock provider that returns streaming events from a predefined list.
+    struct StreamingMockProvider {
+        info: ModelInfo,
+        events: Vec<StreamEvent>,
+    }
+
+    impl StreamingMockProvider {
+        fn new(events: Vec<StreamEvent>) -> Self {
+            Self {
+                info: ModelInfo::new("test-stream", ModelTier::Small, 4096, false, true, false),
+                events,
+            }
+        }
+    }
+
+    #[async_trait]
+    impl Provider for StreamingMockProvider {
+        async fn complete(&self, _req: CompletionRequest) -> crate::Result<CompletionResponse> {
+            // Not used in streaming tests
+            Ok(CompletionResponse {
+                content: ResponseContent::Text("fallback".into()),
+                usage: Usage::default(),
+            })
+        }
+
+        async fn stream(&self, _req: CompletionRequest) -> crate::Result<CompletionStream> {
+            let (tx, rx) = tokio::sync::mpsc::channel(32);
+            let events = self.events.clone();
+            tokio::spawn(async move {
+                for event in events {
+                    if tx.send(Ok(event)).await.is_err() {
+                        break;
+                    }
+                }
+            });
+            Ok(Box::pin(tokio_stream::wrappers::ReceiverStream::new(rx)))
+        }
+
+        fn model_info(&self) -> &ModelInfo {
+            &self.info
+        }
+    }
+
+    #[tokio::test]
+    async fn test_text_stream_yields_text_deltas_ac2_ac3() {
+        // AC-2/3: AgentStream yields StreamEvent::TextDelta + Done
+        let provider = StreamingMockProvider::new(vec![
+            StreamEvent::TextDelta("Hello, ".into()),
+            StreamEvent::TextDelta("world!".into()),
+            StreamEvent::Done,
+        ]);
+
+        let agent = Agent::builder()
+            .model(provider)
+            .system("You stream")
+            .build()
+            .unwrap();
+
+        let mut stream = agent.stream("Hi");
+        let mut events = vec![];
+        while let Some(result) = stream.next().await {
+            events.push(result.unwrap());
+        }
+
+        assert_eq!(events.len(), 3);
+        assert!(matches!(&events[0], StreamEvent::TextDelta(t) if t == "Hello, "));
+        assert!(matches!(&events[1], StreamEvent::TextDelta(t) if t == "world!"));
+        assert!(matches!(&events[2], StreamEvent::Done));
+    }
+
+    #[tokio::test]
+    async fn test_done_is_always_last_ac3() {
+        // AC-3: Done variant is the last event
+        let provider = StreamingMockProvider::new(vec![
+            StreamEvent::TextDelta("chunk".into()),
+            StreamEvent::Done,
+        ]);
+
+        let agent = Agent::builder()
+            .model(provider)
+            .system("You stream")
+            .build()
+            .unwrap();
+
+        let mut stream = agent.stream("Hi");
+        let mut last_event = None;
+        while let Some(result) = stream.next().await {
+            last_event = Some(result.unwrap());
+        }
+
+        assert!(matches!(last_event, Some(StreamEvent::Done)));
+    }
+
+    #[tokio::test]
+    async fn test_stream_saves_to_memory_ac1() {
+        // AC-1: After streaming completes, accumulated text is saved to memory
+        let provider = StreamingMockProvider::new(vec![
+            StreamEvent::TextDelta("Saved ".into()),
+            StreamEvent::TextDelta("text".into()),
+            StreamEvent::Done,
+        ]);
+
+        let agent = Agent::builder()
+            .model(provider)
+            .system("You stream")
+            .build()
+            .unwrap();
+
+        let mut stream = agent.stream("Save this");
+        // Consume the entire stream
+        while stream.next().await.is_some() {}
+
+        // Verify memory was saved
+        let msgs = agent.memory.messages("default").await.unwrap();
+        // Should have user message + assistant accumulated text
+        assert!(msgs.iter().any(|m| m.content == "Save this"));
+        assert!(msgs.iter().any(|m| m.content == "Saved text"));
+    }
 }

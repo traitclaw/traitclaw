@@ -36,3 +36,7 @@ pub use baseclaw_core::*;
 
 // Re-export the derive macro
 pub use baseclaw_macros::Tool;
+
+// Feature-gated provider re-exports
+#[cfg(feature = "openai-compat")]
+pub use baseclaw_openai_compat as openai_compat;

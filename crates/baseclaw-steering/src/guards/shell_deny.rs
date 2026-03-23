@@ -107,13 +107,9 @@ impl Guard for ShellDenyGuard {
 
     fn check(&self, action: &Action) -> GuardResult {
         let text_to_check: Option<String> = match action {
-            Action::ToolCall { name, arguments } => {
-                Some(format!("{name} {arguments}"))
-            }
+            Action::ToolCall { name, arguments } => Some(format!("{name} {arguments}")),
             Action::ShellCommand { command } => Some(command.clone()),
-            Action::FileWrite { path, content } => {
-                Some(format!("{} {content}", path.display()))
-            }
+            Action::FileWrite { path, content } => Some(format!("{} {content}", path.display())),
             _ => None,
         };
 

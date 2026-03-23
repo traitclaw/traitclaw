@@ -1,7 +1,11 @@
 //! Agent configuration.
 
 /// Configuration for an Agent instance.
+///
+/// This struct is `#[non_exhaustive]` — new fields may be added in future
+/// releases (e.g., `retry_policy`, `timeout_secs`) without breaking changes.
 #[derive(Debug, Clone)]
+#[non_exhaustive]
 pub struct AgentConfig {
     /// System prompt for the agent.
     pub system_prompt: Option<String>,
@@ -23,8 +27,8 @@ impl Default for AgentConfig {
     fn default() -> Self {
         Self {
             system_prompt: None,
-            max_tokens: None,
-            temperature: None,
+            max_tokens: Some(4096),
+            temperature: Some(0.7),
             max_iterations: 20,
             token_budget: None,
         }
@@ -40,6 +44,8 @@ mod tests {
         let config = AgentConfig::default();
         assert!(config.system_prompt.is_none());
         assert_eq!(config.max_iterations, 20);
+        assert_eq!(config.max_tokens, Some(4096));
         assert!(config.token_budget.is_none());
+        assert!((config.temperature.unwrap() - 0.7).abs() < f32::EPSILON);
     }
 }

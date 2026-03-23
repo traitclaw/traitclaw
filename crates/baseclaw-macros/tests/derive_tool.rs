@@ -44,7 +44,10 @@ fn test_derive_tool_description() {
 fn test_derive_tool_schema_structure() {
     let schema = WebSearch::tool_schema();
     assert_eq!(schema.name, "web_search");
-    assert_eq!(schema.description, "Search the web for relevant information");
+    assert_eq!(
+        schema.description,
+        "Search the web for relevant information"
+    );
 
     // Schema should be a JSON object (from schemars)
     assert!(schema.parameters.is_object());

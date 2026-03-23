@@ -1,9 +1,11 @@
 //! Conversion between `baseclaw-core` types and the Anthropic Messages API format.
 
-use baseclaw_core::types::completion::{CompletionRequest, CompletionResponse, ResponseContent, Usage};
-use baseclaw_core::types::message::{MessageRole};
+use baseclaw_core::types::completion::{
+    CompletionRequest, CompletionResponse, ResponseContent, Usage,
+};
+use baseclaw_core::types::message::MessageRole;
 use baseclaw_core::types::tool_call::ToolCall;
-use baseclaw_core::{ToolSchema};
+use baseclaw_core::ToolSchema;
 
 use crate::wire::{
     AnthropicContent, AnthropicMessage, AnthropicTool, ContentBlock, MessagesRequest,
@@ -59,6 +61,8 @@ pub(crate) fn to_wire(req: CompletionRequest) -> MessagesRequest {
                     }]),
                 });
             }
+            // Forward-compatible: skip unknown roles (#[non_exhaustive] on MessageRole)
+            _ => {}
         }
     }
 
@@ -99,7 +103,10 @@ fn simplify_schema(mut schema: serde_json::Value) -> serde_json::Value {
         obj.remove("definitions");
         // Ensure type is present
         if !obj.contains_key("type") {
-            obj.insert("type".to_string(), serde_json::Value::String("object".to_string()));
+            obj.insert(
+                "type".to_string(),
+                serde_json::Value::String("object".to_string()),
+            );
         }
     }
     schema
@@ -122,7 +129,11 @@ pub(crate) fn from_wire(wire: MessagesResponse) -> CompletionResponse {
                 text_parts.push(text);
             }
             ResponseContentBlock::ToolUse { id, name, input } => {
-                tool_calls.push(ToolCall { id, name, arguments: input });
+                tool_calls.push(ToolCall {
+                    id,
+                    name,
+                    arguments: input,
+                });
             }
         }
     }
@@ -135,5 +146,3 @@ pub(crate) fn from_wire(wire: MessagesResponse) -> CompletionResponse {
 
     CompletionResponse { content, usage }
 }
-
-

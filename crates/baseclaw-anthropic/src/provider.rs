@@ -22,7 +22,10 @@ use tokio_stream::wrappers::ReceiverStream;
 use tokio_stream::Stream;
 
 use crate::convert::{from_wire, to_wire};
-use crate::wire::{MessagesResponse, StreamContentBlock, StreamDelta, StreamEvent as AnthropicEvent, ANTHROPIC_BASE, ANTHROPIC_VERSION};
+use crate::wire::{
+    MessagesResponse, StreamContentBlock, StreamDelta, StreamEvent as AnthropicEvent,
+    ANTHROPIC_BASE, ANTHROPIC_VERSION,
+};
 
 /// Provider for the Anthropic Messages API.
 pub struct AnthropicProvider {
@@ -73,7 +76,10 @@ impl AnthropicProvider {
 impl Provider for AnthropicProvider {
     async fn complete(&self, request: CompletionRequest) -> Result<CompletionResponse> {
         let wire = to_wire(request);
-        tracing::debug!(model = wire.model.as_str(), "Sending Anthropic completion request");
+        tracing::debug!(
+            model = wire.model.as_str(),
+            "Sending Anthropic completion request"
+        );
 
         let builder = self.client.post(Self::messages_url()).json(&wire);
         let builder = self.add_headers(builder);
@@ -86,7 +92,9 @@ impl Provider for AnthropicProvider {
         let status = http_resp.status();
         if !status.is_success() {
             let body = http_resp.text().await.unwrap_or_default();
-            return Err(Error::provider(format!("Anthropic API error {status}: {body}")));
+            return Err(Error::provider(format!(
+                "Anthropic API error {status}: {body}"
+            )));
         }
 
         let resp: MessagesResponse = http_resp
@@ -104,7 +112,10 @@ impl Provider for AnthropicProvider {
         let mut wire = to_wire(request);
         wire.stream = true;
 
-        tracing::debug!(model = wire.model.as_str(), "Sending Anthropic streaming request");
+        tracing::debug!(
+            model = wire.model.as_str(),
+            "Sending Anthropic streaming request"
+        );
 
         let builder = self.client.post(Self::messages_url()).json(&wire);
         let builder = self.add_headers(builder);
@@ -137,9 +148,7 @@ impl Provider for AnthropicProvider {
 
 /// Parse Anthropic SSE stream and emit `StreamEvent`s.
 async fn parse_anthropic_sse(
-    mut byte_stream: impl tokio_stream::Stream<Item = reqwest::Result<bytes::Bytes>>
-        + Send
-        + Unpin,
+    mut byte_stream: impl tokio_stream::Stream<Item = reqwest::Result<bytes::Bytes>> + Send + Unpin,
     tx: tokio::sync::mpsc::Sender<Result<StreamEvent>>,
 ) {
     use tokio_stream::StreamExt;
@@ -187,26 +196,28 @@ async fn parse_anthropic_sse(
             };
 
             match event {
-                AnthropicEvent::ContentBlockStart { index, content_block } => {
-                    match content_block {
-                        StreamContentBlock::ToolUse { id, name } => {
-                            tool_blocks.insert(index, (id.clone(), name.clone()));
-                            if tx
-                                .send(Ok(StreamEvent::ToolCallStart { id, name }))
-                                .await
-                                .is_err()
-                            {
-                                return;
-                            }
+                AnthropicEvent::ContentBlockStart {
+                    index,
+                    content_block,
+                } => match content_block {
+                    StreamContentBlock::ToolUse { id, name } => {
+                        tool_blocks.insert(index, (id.clone(), name.clone()));
+                        if tx
+                            .send(Ok(StreamEvent::ToolCallStart { id, name }))
+                            .await
+                            .is_err()
+                        {
+                            return;
                         }
-                        StreamContentBlock::Text { .. } => {}
                     }
-                }
+                    StreamContentBlock::Text { .. } => {}
+                },
 
                 AnthropicEvent::ContentBlockDelta { index, delta } => match delta {
                     StreamDelta::TextDelta { text } => {
                         if !text.is_empty()
-                            && tx.send(Ok(StreamEvent::TextDelta(text))).await.is_err() {
+                            && tx.send(Ok(StreamEvent::TextDelta(text))).await.is_err()
+                        {
                             return;
                         }
                     }
@@ -254,13 +265,12 @@ fn infer_model_info(model: &str) -> ModelInfo {
         ModelTier::Medium
     };
 
-    ModelInfo {
-        name: model.to_string(),
+    ModelInfo::new(
+        model,
         tier,
-        // All Claude models have 200k context
-        context_window: 200_000,
-        supports_tools: true,
-        supports_vision: true, // All Claude 3 models support vision
-        supports_structured: m.contains("claude-3-5-sonnet"),
-    }
+        200_000, // All Claude models have 200k context
+        true,
+        true, // All Claude 3 models support vision
+        m.contains("claude-3-5-sonnet"),
+    )
 }

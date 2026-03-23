@@ -5,13 +5,13 @@
 
 use async_trait::async_trait;
 use schemars::JsonSchema;
-use serde::{de::DeserializeOwned, Serialize};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::Value;
 
 use crate::Result;
 
 /// JSON Schema representation for a tool's parameters.
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ToolSchema {
     /// Tool name.
     pub name: String,

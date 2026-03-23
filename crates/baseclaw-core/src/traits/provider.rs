@@ -9,37 +9,8 @@ use crate::types::completion::{CompletionRequest, CompletionResponse};
 use crate::types::stream::CompletionStream;
 use crate::Result;
 
-/// Information about the model being used.
-#[derive(Debug, Clone)]
-pub struct ModelInfo {
-    /// Model name (e.g., "gpt-4o", "claude-sonnet").
-    pub name: String,
-    /// Model capability tier for steering auto-configuration.
-    pub tier: ModelTier,
-    /// Maximum context window size in tokens.
-    pub context_window: usize,
-    /// Whether the model supports tool/function calling.
-    pub supports_tools: bool,
-    /// Whether the model supports image/vision input.
-    pub supports_vision: bool,
-    /// Whether the model supports structured JSON output.
-    pub supports_structured: bool,
-}
-
-/// Model capability tier used by the steering system to auto-configure
-/// Guard, Hint, and Tracker behavior.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ModelTier {
-    /// Small models (e.g., Haiku, Phi, Gemma).
-    /// Need aggressive steering: hints every 3 iterations, serial concurrency.
-    Small,
-    /// Medium models (e.g., Sonnet, GPT-4o-mini).
-    /// Moderate steering: hints every 6 iterations, limited concurrency.
-    Medium,
-    /// Large models (e.g., Opus, GPT-4o, Gemini Ultra).
-    /// Light steering: hints every 12 iterations, full concurrency.
-    Large,
-}
+// Re-export for backward compatibility — callers who used `traits::provider::ModelInfo` continue to work.
+pub use crate::types::model_info::{ModelInfo, ModelTier};
 
 /// Trait for LLM providers.
 ///
@@ -79,4 +50,130 @@ pub trait Provider: Send + Sync + 'static {
 
     /// Get information about the model.
     fn model_info(&self) -> &ModelInfo;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::types::completion::{ResponseContent, Usage};
+
+    // ─── MockProvider ────────────────────────────────────────────────────────
+
+    struct MockProvider {
+        info: ModelInfo,
+        response: String,
+    }
+
+    impl MockProvider {
+        fn new(response: impl Into<String>) -> Self {
+            Self {
+                info: ModelInfo {
+                    name: "mock-model".to_string(),
+                    tier: ModelTier::Medium,
+                    context_window: 8_192,
+                    supports_tools: true,
+                    supports_vision: false,
+                    supports_structured: true,
+                },
+                response: response.into(),
+            }
+        }
+    }
+
+    #[async_trait]
+    impl Provider for MockProvider {
+        async fn complete(&self, _request: CompletionRequest) -> Result<CompletionResponse> {
+            Ok(CompletionResponse {
+                content: ResponseContent::Text(self.response.clone()),
+                usage: Usage {
+                    prompt_tokens: 10,
+                    completion_tokens: 5,
+                    total_tokens: 15,
+                },
+            })
+        }
+
+        async fn stream(&self, _request: CompletionRequest) -> Result<CompletionStream> {
+            let text = self.response.clone();
+            let stream = tokio_stream::once(Ok(crate::types::stream::StreamEvent::TextDelta(text)));
+            Ok(Box::pin(stream))
+        }
+
+        fn model_info(&self) -> &ModelInfo {
+            &self.info
+        }
+    }
+
+    // ─── Tests ───────────────────────────────────────────────────────────────
+
+    #[tokio::test]
+    async fn test_mock_provider_complete_ac1() {
+        // AC-1: complete() accepts CompletionRequest and returns Result<CompletionResponse>
+        use crate::types::message::Message;
+
+        let provider = MockProvider::new("Hello from LLM!");
+        let request = CompletionRequest {
+            model: "mock-model".to_string(),
+            messages: vec![Message::user("Hi")],
+            tools: vec![],
+            max_tokens: None,
+            temperature: None,
+            stream: false,
+        };
+
+        let response = provider.complete(request).await.unwrap();
+        match response.content {
+            ResponseContent::Text(t) => assert_eq!(t, "Hello from LLM!"),
+            ResponseContent::ToolCalls(_) => panic!("expected Text"),
+        }
+        assert_eq!(response.usage.total_tokens, 15);
+    }
+
+    #[tokio::test]
+    async fn test_mock_provider_stream_ac2() {
+        // AC-2: stream() returns Result<CompletionStream>
+        use crate::types::message::Message;
+        use crate::types::stream::StreamEvent;
+        use tokio_stream::StreamExt;
+
+        let provider = MockProvider::new("streamed chunk");
+        let request = CompletionRequest {
+            model: "mock-model".to_string(),
+            messages: vec![Message::user("stream test")],
+            tools: vec![],
+            max_tokens: None,
+            temperature: None,
+            stream: true,
+        };
+
+        let mut stream = provider.stream(request).await.unwrap();
+        let event = stream
+            .next()
+            .await
+            .expect("expected at least one event")
+            .unwrap();
+        match event {
+            StreamEvent::TextDelta(t) => assert_eq!(t, "streamed chunk"),
+            _ => panic!("expected TextDelta"),
+        }
+    }
+
+    #[test]
+    fn test_mock_provider_model_info_ac3() {
+        // AC-3: model_info() returns ModelInfo with expected fields
+        let provider = MockProvider::new("x");
+        let info = provider.model_info();
+        assert_eq!(info.name, "mock-model");
+        assert_eq!(info.tier, ModelTier::Medium);
+        assert_eq!(info.context_window, 8_192);
+        assert!(info.supports_tools);
+        assert!(!info.supports_vision);
+    }
+
+    #[test]
+    fn test_provider_send_sync_static_bounds_ac5() {
+        // AC-5: Provider requires Send + Sync + 'static — verified at compile time
+        fn assert_bounds<T: Send + Sync + 'static>() {}
+        assert_bounds::<MockProvider>();
+    }
 }

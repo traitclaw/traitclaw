@@ -201,9 +201,7 @@ impl Provider for OpenAiCompatProvider {
 
 /// Parse SSE byte stream and send `StreamEvent`s.
 async fn parse_sse(
-    mut byte_stream: impl tokio_stream::Stream<Item = reqwest::Result<bytes::Bytes>>
-        + Send
-        + Unpin,
+    mut byte_stream: impl tokio_stream::Stream<Item = reqwest::Result<bytes::Bytes>> + Send + Unpin,
     tx: tokio::sync::mpsc::Sender<Result<StreamEvent>>,
 ) {
     use tokio_stream::StreamExt;
@@ -347,14 +345,14 @@ fn infer_model_info(model: &str, base_url: &str) -> ModelInfo {
         32_768
     };
 
-    ModelInfo {
-        name: model.to_string(),
+    ModelInfo::new(
+        model,
         tier,
         context_window,
-        supports_tools: true,
-        supports_vision: m.contains("vision")
+        true,
+        m.contains("vision")
             || (m.contains("gpt-4o") && !m.contains("mini"))
             || m.contains("claude-3"),
-        supports_structured: m.contains("gpt-4o") || m.contains("claude-3-5-sonnet"),
-    }
+        m.contains("gpt-4o") || m.contains("claude-3-5-sonnet"),
+    )
 }

@@ -5,9 +5,7 @@ use baseclaw_core::types::message::{Message, MessageRole};
 use baseclaw_core::types::tool_call::ToolCall;
 use baseclaw_core::{Error, Result, ToolSchema};
 
-use crate::wire::{
-    ChatRequest, ChatResponse, WireFunctionDef, WireMessage, WireTool,
-};
+use crate::wire::{ChatRequest, ChatResponse, WireFunctionDef, WireMessage, WireTool};
 use baseclaw_core::types::completion::CompletionRequest;
 
 /// Convert a `CompletionRequest` into an OpenAI-compatible `ChatRequest`.
@@ -32,6 +30,9 @@ fn msg_to_wire(msg: Message) -> WireMessage {
         MessageRole::User => "user",
         MessageRole::Assistant => "assistant",
         MessageRole::Tool => "tool",
+        // Forward-compatible: unknown roles pass through as-is via serde string.
+        // This arm satisfies #[non_exhaustive] on MessageRole.
+        _ => "unknown",
     }
     .to_string();
 
@@ -89,9 +90,7 @@ pub(crate) fn from_wire(wire: ChatResponse) -> Result<CompletionResponse> {
 }
 
 /// Convert a wire `WireToolCall` to a core `ToolCall`.
-pub(crate) fn wire_tool_call_to_core(
-    tc: crate::wire::WireToolCall,
-) -> ToolCall {
+pub(crate) fn wire_tool_call_to_core(tc: crate::wire::WireToolCall) -> ToolCall {
     // Model returns arguments as a JSON string — parse into Value
     let arguments = serde_json::from_str(&tc.function.arguments)
         .unwrap_or_else(|_| serde_json::Value::String(tc.function.arguments.clone()));
