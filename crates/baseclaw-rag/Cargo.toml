@@ -1,0 +1,14 @@
+[package]
+name = "baseclaw-rag"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "RAG pipeline for BaseClaw — Retriever trait, grounding strategies, and BM25 keyword search"
+
+[dependencies]
+baseclaw-core = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true }
+async-trait = { workspace = true }
