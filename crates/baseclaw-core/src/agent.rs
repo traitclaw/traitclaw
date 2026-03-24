@@ -130,6 +130,18 @@ pub struct Agent {
     pub(crate) config: AgentConfig,
 }
 
+impl std::fmt::Debug for Agent {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Agent")
+            .field("model", &self.provider.model_info().name)
+            .field("tools", &self.tools.len())
+            .field("guards", &self.guards.len())
+            .field("hints", &self.hints.len())
+            .field("config", &self.config)
+            .finish_non_exhaustive()
+    }
+}
+
 impl Agent {
     /// Create a builder for constructing an agent.
     #[must_use]
