@@ -40,7 +40,7 @@ async fn main() -> anyhow::Result<()> {
 
     // ── 2. Simulate agent responses ─────────────────────────
     // In a real scenario, you'd call agent.run() for each test case
-    let simulated_responses = vec![
+    let simulated_responses = [
         ("greeting", "Hello! I'm happy to help you today. How can I assist?"),
         ("rust-question", "Rust is a systems programming language focused on memory safety, performance, and concurrency."),
         ("math", "2 + 2 equals 4."),
