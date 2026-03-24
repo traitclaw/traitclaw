@@ -75,7 +75,7 @@ pub use error::{Error, Result};
 pub use memory::in_memory::InMemoryMemory;
 
 // Re-export agent
-pub use agent::{Agent, AgentOutput, AgentSession};
+pub use agent::{Agent, AgentOutput, AgentOutputContent, AgentSession, RunUsage};
 pub use agent_builder::AgentBuilder;
 
 /// Prelude module for convenient imports.
@@ -113,6 +113,6 @@ pub mod prelude {
     pub use crate::error::{Error, Result};
     pub use crate::memory::in_memory::InMemoryMemory;
 
-    pub use crate::agent::{Agent, AgentOutput, AgentSession};
+    pub use crate::agent::{Agent, AgentOutput, AgentOutputContent, AgentSession, RunUsage};
     pub use crate::agent_builder::AgentBuilder;
 }

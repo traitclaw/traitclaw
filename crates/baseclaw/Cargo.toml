@@ -10,6 +10,12 @@ description = "A Rust AI Agent Framework — Simple by default, powerful when ne
 baseclaw-core = { workspace = true }
 baseclaw-macros = { workspace = true }
 baseclaw-openai-compat = { workspace = true, optional = true }
+baseclaw-steering = { workspace = true, optional = true }
+baseclaw-memory-sqlite = { workspace = true, optional = true }
+baseclaw-mcp = { workspace = true, optional = true }
+baseclaw-rag = { workspace = true, optional = true }
+baseclaw-team = { workspace = true, optional = true }
+baseclaw-eval = { workspace = true, optional = true }
 schemars = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
@@ -18,3 +24,10 @@ serde_json = { workspace = true }
 default = ["openai-compat", "macros"]
 macros = []
 openai-compat = ["dep:baseclaw-openai-compat"]
+steering = ["dep:baseclaw-steering"]
+sqlite = ["dep:baseclaw-memory-sqlite"]
+mcp = ["dep:baseclaw-mcp"]
+rag = ["dep:baseclaw-rag"]
+team = ["dep:baseclaw-team"]
+eval = ["dep:baseclaw-eval"]
+full = ["openai-compat", "macros", "steering", "sqlite", "mcp", "rag", "team", "eval"]

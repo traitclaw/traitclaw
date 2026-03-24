@@ -17,6 +17,17 @@ use crate::traits::tracker::Tracker;
 use crate::types::message::Message;
 use crate::Result;
 
+/// Usage statistics from an agent run.
+#[derive(Debug, Clone, Default)]
+pub struct RunUsage {
+    /// Total tokens consumed across all LLM calls.
+    pub tokens: usize,
+    /// Number of agent loop iterations.
+    pub iterations: usize,
+    /// Wall-clock duration of the run.
+    pub duration: std::time::Duration,
+}
+
 /// Output from an agent run.
 ///
 /// This enum is marked `#[non_exhaustive]` — new variants may be added in
@@ -24,28 +35,75 @@ use crate::Result;
 /// exhaustive matches.
 #[derive(Debug, Clone)]
 #[non_exhaustive]
-pub enum AgentOutput {
+pub struct AgentOutput {
+    /// The response content.
+    pub content: AgentOutputContent,
+    /// Usage statistics for this run.
+    pub usage: RunUsage,
+}
+
+/// The content type of an agent output.
+#[derive(Debug, Clone)]
+#[non_exhaustive]
+pub enum AgentOutputContent {
     /// The agent returned a text response.
     Text(String),
+    /// The agent returned a structured JSON response.
+    Structured(serde_json::Value),
+    /// The agent encountered an error.
+    Error(String),
 }
 
 impl AgentOutput {
+    /// Create a text output with usage.
+    #[must_use]
+    pub fn text_with_usage(text: String, usage: RunUsage) -> Self {
+        Self {
+            content: AgentOutputContent::Text(text),
+            usage,
+        }
+    }
+
     /// Get the text content if this is a text output.
     #[must_use]
     pub fn text(&self) -> &str {
-        match self {
-            Self::Text(t) => t,
+        match &self.content {
+            AgentOutputContent::Text(t) => t,
+            AgentOutputContent::Structured(v) => {
+                // Return the JSON string representation — this is a fallback
+                // Callers should use structured() for JSON values
+                Box::leak(v.to_string().into_boxed_str())
+            }
+            AgentOutputContent::Error(e) => e,
         }
+    }
+
+    /// Get the structured JSON value if this is a structured output.
+    #[must_use]
+    pub fn structured(&self) -> Option<&serde_json::Value> {
+        match &self.content {
+            AgentOutputContent::Structured(v) => Some(v),
+            _ => None,
+        }
+    }
+
+    /// Check if this is an error output.
+    #[must_use]
+    pub fn is_error(&self) -> bool {
+        matches!(&self.content, AgentOutputContent::Error(_))
     }
 }
 
 impl std::fmt::Display for AgentOutput {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Text(t) => write!(f, "{t}"),
+        match &self.content {
+            AgentOutputContent::Text(t) => write!(f, "{t}"),
+            AgentOutputContent::Structured(v) => write!(f, "{v}"),
+            AgentOutputContent::Error(e) => write!(f, "Error: {e}"),
         }
     }
 }
+
 
 /// The main agent struct.
 ///

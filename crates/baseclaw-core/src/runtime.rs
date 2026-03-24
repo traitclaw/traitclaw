@@ -2,7 +2,7 @@
 //!
 //! Orchestrates the LLM call → tool execution → steering cycle.
 
-use crate::agent::{Agent, AgentOutput};
+use crate::agent::{Agent, AgentOutput, RunUsage};
 use crate::types::agent_state::AgentState;
 use crate::types::completion::{CompletionRequest, ResponseContent};
 use crate::types::message::Message;
@@ -10,7 +10,9 @@ use crate::types::tool_call::ToolCall;
 use crate::Result;
 
 /// Run the full agent loop.
+#[tracing::instrument(skip_all, fields(session_id = session_id, model = %agent.provider.model_info().name))]
 pub(crate) async fn run_agent(agent: &Agent, input: &str, session_id: &str) -> Result<AgentOutput> {
+    let start = std::time::Instant::now();
     let model_info = agent.provider.model_info();
 
     let mut state = AgentState::new(model_info.tier, model_info.context_window);
@@ -52,15 +54,28 @@ pub(crate) async fn run_agent(agent: &Agent, input: &str, session_id: &str) -> R
         match response.content {
             ResponseContent::Text(text) => {
                 let assistant_msg = Message::assistant(&text);
-                agent.memory.append(session_id, assistant_msg).await?;
+                // Memory save is non-fatal (Story 7.4 AC:3)
+                if let Err(e) = agent.memory.append(session_id, assistant_msg).await {
+                    tracing::warn!("Failed to save assistant response to memory: {e}");
+                }
+
+                let usage = RunUsage {
+                    tokens: state.token_usage,
+                    iterations: state.iteration_count,
+                    duration: start.elapsed(),
+                };
+
+                #[allow(clippy::cast_possible_truncation)]
+                let duration_ms = usage.duration.as_millis() as u64;
 
                 tracing::info!(
-                    iterations = state.iteration_count,
-                    tokens = state.token_usage,
+                    iterations = usage.iterations,
+                    tokens = usage.tokens,
+                    duration_ms,
                     "Agent completed"
                 );
 
-                return Ok(AgentOutput::Text(text));
+                return Ok(AgentOutput::text_with_usage(text, usage));
             }
             ResponseContent::ToolCalls(tool_calls) => {
                 process_tool_calls(agent, &tool_calls, &state, &mut messages).await;
@@ -74,9 +89,20 @@ pub(crate) async fn run_agent(agent: &Agent, input: &str, session_id: &str) -> R
     )))
 }
 
+
 /// Load conversation context: history + system prompt + user message.
+///
+/// Memory failures are non-fatal (Story 7.4 AC:3) — if history load fails,
+/// the agent starts with a fresh context instead of crashing.
 async fn load_context(agent: &Agent, session_id: &str, input: &str) -> Result<Vec<Message>> {
-    let mut messages = agent.memory.messages(session_id).await?;
+    let mut messages = agent
+        .memory
+        .messages(session_id)
+        .await
+        .unwrap_or_else(|e| {
+            tracing::warn!("Failed to load memory (continuing fresh): {e}");
+            Vec::new()
+        });
 
     if let Some(ref system_prompt) = agent.config.system_prompt {
         if messages.is_empty() || messages[0].role != crate::types::message::MessageRole::System {
@@ -86,10 +112,15 @@ async fn load_context(agent: &Agent, session_id: &str, input: &str) -> Result<Ve
 
     let user_msg = Message::user(input);
     messages.push(user_msg.clone());
-    agent.memory.append(session_id, user_msg).await?;
+
+    // Memory append is non-fatal (Story 7.4 AC:3)
+    if let Err(e) = agent.memory.append(session_id, user_msg).await {
+        tracing::warn!("Failed to save user message to memory: {e}");
+    }
 
     Ok(messages)
 }
+
 
 /// Check hints and inject guidance messages.
 fn inject_hints(agent: &Agent, state: &AgentState, messages: &mut Vec<Message>) {

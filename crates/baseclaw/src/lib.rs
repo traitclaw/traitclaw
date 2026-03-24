@@ -11,22 +11,19 @@
 //! baseclaw = "0.1"
 //! ```
 //!
-//! # Quick Start
+//! ## Feature Flags
 //!
-//! ```rust,no_run
-//! use baseclaw::prelude::*;
-//!
-//! # async fn example() -> baseclaw::Result<()> {
-//! // Create an agent (requires a Provider implementation)
-//! // let agent = Agent::builder()
-//! //     .model(my_provider)
-//! //     .system("You are a helpful assistant")
-//! //     .build()?;
-//! //
-//! // let response = agent.run("Hello!").await?;
-//! # Ok(())
-//! # }
-//! ```
+//! | Feature | Crate | Default |
+//! |---------|-------|---------|
+//! | `openai-compat` | `baseclaw-openai-compat` | ✅ |
+//! | `macros` | `baseclaw-macros` | ✅ |
+//! | `steering` | `baseclaw-steering` | ❌ |
+//! | `sqlite` | `baseclaw-memory-sqlite` | ❌ |
+//! | `mcp` | `baseclaw-mcp` | ❌ |
+//! | `rag` | `baseclaw-rag` | ❌ |
+//! | `team` | `baseclaw-team` | ❌ |
+//! | `eval` | `baseclaw-eval` | ❌ |
+//! | `full` | all of the above | ❌ |
 
 #![deny(warnings)]
 #![deny(missing_docs)]
@@ -37,6 +34,32 @@ pub use baseclaw_core::*;
 // Re-export the derive macro
 pub use baseclaw_macros::Tool;
 
-// Feature-gated provider re-exports
+// ── Feature-gated provider re-exports ────────────────────
+
+/// OpenAI-compatible provider (GPT, Ollama, Groq, etc.)
 #[cfg(feature = "openai-compat")]
 pub use baseclaw_openai_compat as openai_compat;
+
+/// Steering system (Guards, Hints, Trackers)
+#[cfg(feature = "steering")]
+pub use baseclaw_steering as steering;
+
+/// SQLite-backed persistent memory
+#[cfg(feature = "sqlite")]
+pub use baseclaw_memory_sqlite as memory_sqlite;
+
+/// Model Context Protocol (MCP) integration
+#[cfg(feature = "mcp")]
+pub use baseclaw_mcp as mcp;
+
+/// Retrieval-Augmented Generation (RAG)
+#[cfg(feature = "rag")]
+pub use baseclaw_rag as rag;
+
+/// Multi-agent teams and delegation
+#[cfg(feature = "team")]
+pub use baseclaw_team as team;
+
+/// Evaluation and benchmarking
+#[cfg(feature = "eval")]
+pub use baseclaw_eval as eval;

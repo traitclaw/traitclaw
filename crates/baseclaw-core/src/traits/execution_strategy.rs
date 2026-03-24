@@ -208,15 +208,28 @@ async fn execute_single(
         arguments: call.arguments.clone(),
     };
 
-    // Guard checks
+    // Guard checks — catch_unwind for external guard safety (Story 7.4)
     for guard in guards {
-        match guard.check(&action) {
-            GuardResult::Allow => {}
-            GuardResult::Deny { reason, .. } => {
+        let guard_name = guard.name().to_string();
+        let action_ref = &action;
+        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            guard.check(action_ref)
+        }));
+
+        match result {
+            Ok(GuardResult::Allow) => {}
+            Ok(GuardResult::Deny { reason, .. }) => {
                 return format!("Error: Action blocked by guard: {reason}");
             }
-            GuardResult::Sanitize { warning, .. } => {
-                tracing::info!(guard = guard.name(), "Guard sanitized: {warning}");
+            Ok(GuardResult::Sanitize { warning, .. }) => {
+                tracing::info!(guard = guard_name.as_str(), "Guard sanitized: {warning}");
+            }
+            Err(_) => {
+                // Guard panicked — treat as Allow, log warning (Story 7.4 AC:2)
+                tracing::warn!(
+                    guard = guard_name.as_str(),
+                    "Guard panicked — treating as Allow"
+                );
             }
         }
     }
