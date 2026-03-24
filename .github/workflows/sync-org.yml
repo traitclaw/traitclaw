@@ -1,0 +1,33 @@
+name: Sync to Org
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Remove private content
+        run: |
+          git rm -r --cached _bmad-output/ 2>/dev/null || true
+          git rm -r --cached _bmad/ 2>/dev/null || true
+
+      - name: Create filtered commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          TREE=$(git write-tree)
+          PARENT=$(git rev-parse HEAD)
+          COMMIT=$(echo "sync: update from upstream" | git commit-tree "$TREE" -p "$PARENT")
+          git update-ref refs/heads/filtered "$COMMIT"
+
+      - name: Push to org repo
+        run: |
+          git remote add org https://x-access-token:${{ secrets.ORG_SYNC_TOKEN }}@github.com/traitclaw/traitclaw.git
+          git push org filtered:main --force
