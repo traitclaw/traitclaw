@@ -30,9 +30,8 @@ pub struct RunUsage {
 
 /// Output from an agent run.
 ///
-/// This enum is marked `#[non_exhaustive]` — new variants may be added in
-/// future releases (e.g., `Image`, `Audio`). Always use a wildcard arm in
-/// exhaustive matches.
+/// This struct is marked `#[non_exhaustive]` — new fields may be added in
+/// future releases without breaking changes.
 #[derive(Debug, Clone)]
 #[non_exhaustive]
 pub struct AgentOutput {
@@ -65,16 +64,23 @@ impl AgentOutput {
     }
 
     /// Get the text content if this is a text output.
+    ///
+    /// Returns an empty string for `Structured` and `Error` variants.
+    /// Use [`structured()`](Self::structured) or [`Display`] for those.
     #[must_use]
     pub fn text(&self) -> &str {
         match &self.content {
             AgentOutputContent::Text(t) => t,
-            AgentOutputContent::Structured(v) => {
-                // Return the JSON string representation — this is a fallback
-                // Callers should use structured() for JSON values
-                Box::leak(v.to_string().into_boxed_str())
-            }
-            AgentOutputContent::Error(e) => e,
+            _ => "",
+        }
+    }
+
+    /// Get the error message if this is an error output.
+    #[must_use]
+    pub fn error_message(&self) -> Option<&str> {
+        match &self.content {
+            AgentOutputContent::Error(e) => Some(e),
+            _ => None,
         }
     }
 
@@ -226,6 +232,12 @@ impl Agent {
     /// (`model_info.supports_structured == true`), the `response_format`
     /// is set on the `CompletionRequest` for guaranteed valid JSON.
     /// Otherwise, schema instructions are injected into the system prompt.
+    ///
+    /// # ⚠️ Stateless Mode
+    ///
+    /// This method calls the provider directly, **bypassing** the agent
+    /// runtime loop. Memory, guards, hints, context strategy, and usage
+    /// tracking are not used. Use `run()` for full agent behavior.
     ///
     /// # Errors
     ///

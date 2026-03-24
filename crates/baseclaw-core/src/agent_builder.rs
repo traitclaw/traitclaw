@@ -93,6 +93,8 @@ impl AgentBuilder {
     pub fn with_retry(mut self, config: crate::retry::RetryConfig) -> Self {
         if let Some(inner) = self.provider.take() {
             self.provider = Some(Arc::new(crate::retry::RetryProvider::new(inner, config)));
+        } else {
+            tracing::warn!("with_retry() called before provider() — retry config will be ignored");
         }
         self
     }

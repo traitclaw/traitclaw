@@ -225,11 +225,12 @@ async fn execute_single(
                 tracing::info!(guard = guard_name.as_str(), "Guard sanitized: {warning}");
             }
             Err(_) => {
-                // Guard panicked — treat as Allow, log warning (Story 7.4 AC:2)
+                // Guard panicked — default to Deny for safety (P3 code review)
                 tracing::warn!(
                     guard = guard_name.as_str(),
-                    "Guard panicked — treating as Allow"
+                    "Guard panicked — denying action for safety"
                 );
+                return format!("Error: Action blocked — guard '{guard_name}' panicked");
             }
         }
     }

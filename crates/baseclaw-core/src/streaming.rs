@@ -27,11 +27,12 @@ pub(crate) fn stream_agent(agent: &Agent, input: String, session_id: String) -> 
     tokio::spawn(async move {
         let model_info = provider.model_info();
 
+        // Memory load is non-fatal — start fresh on failure (P2 code review)
         let mut messages = match memory.messages(&session_id).await {
             Ok(m) => m,
             Err(e) => {
-                let _ = tx.send(Err(e)).await;
-                return;
+                tracing::warn!("Streaming: failed to load memory (continuing fresh): {e}");
+                Vec::new()
             }
         };
 
@@ -43,10 +44,11 @@ pub(crate) fn stream_agent(agent: &Agent, input: String, session_id: String) -> 
 
         let user_msg = Message::user(&input);
         messages.push(user_msg.clone());
+        // Memory append is non-fatal (P2 code review)
         if let Err(e) = memory.append(&session_id, user_msg).await {
-            let _ = tx.send(Err(e)).await;
-            return;
+            tracing::warn!("Streaming: failed to save user message to memory: {e}");
         }
+
 
         let tool_schemas = tools.iter().map(|t| t.schema()).collect::<Vec<_>>();
         let state = AgentState::new(model_info.tier, model_info.context_window);
