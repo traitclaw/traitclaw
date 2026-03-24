@@ -14,12 +14,12 @@
 //! ```
 
 use async_trait::async_trait;
+use tokio_stream::wrappers::ReceiverStream;
+use tokio_stream::Stream;
 use traitclaw_core::traits::provider::{ModelInfo, ModelTier, Provider};
 use traitclaw_core::types::completion::{CompletionRequest, CompletionResponse};
 use traitclaw_core::types::stream::StreamEvent;
 use traitclaw_core::{Error, Result};
-use tokio_stream::wrappers::ReceiverStream;
-use tokio_stream::Stream;
 
 use crate::convert::{from_wire, to_wire};
 use crate::wire::{

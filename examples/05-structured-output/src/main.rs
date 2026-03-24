@@ -5,10 +5,10 @@
 //! the JSON schema into the prompt (or uses native structured output
 //! when the model supports it).
 
-use traitclaw::prelude::*;
-use traitclaw_openai_compat::OpenAiCompatProvider;
 use schemars::JsonSchema;
 use serde::Deserialize;
+use traitclaw::prelude::*;
+use traitclaw_openai_compat::OpenAiCompatProvider;
 
 // ── Define your output types ────────────────────────────────
 

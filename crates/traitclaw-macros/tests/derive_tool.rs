@@ -1,9 +1,9 @@
 //! Integration tests for the `#[derive(Tool)]` macro.
 
-use traitclaw_core::ErasedTool;
-use traitclaw_macros::Tool;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use traitclaw_core::ErasedTool;
+use traitclaw_macros::Tool;
 
 // ── Test fixture: WebSearch tool ──────────────────────────────────
 

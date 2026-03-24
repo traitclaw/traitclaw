@@ -1,8 +1,8 @@
 //! `WorkspaceBoundaryGuard` — restricts file operations to allowed directories.
 
+use std::path::{Path, PathBuf};
 use traitclaw_core::traits::guard::{Guard, GuardResult, GuardSeverity};
 use traitclaw_core::types::action::Action;
-use std::path::{Path, PathBuf};
 
 /// A [`Guard`] that restricts file paths to configured allowed directories.
 pub struct WorkspaceBoundaryGuard {

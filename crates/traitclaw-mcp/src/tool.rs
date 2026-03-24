@@ -4,12 +4,12 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use traitclaw_core::traits::tool::{ErasedTool, ToolSchema};
-use traitclaw_core::{Error, Result};
 use serde_json::Value;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt};
 use tokio::process::ChildStdin;
 use tokio::sync::Mutex;
+use traitclaw_core::traits::tool::{ErasedTool, ToolSchema};
+use traitclaw_core::{Error, Result};
 
 use crate::protocol::{JsonRpcRequest, JsonRpcResponse, ToolCallResponse};
 

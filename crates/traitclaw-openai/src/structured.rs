@@ -28,14 +28,14 @@
 //! ```
 
 use async_trait::async_trait;
+use schemars::JsonSchema;
+use serde::de::DeserializeOwned;
+use tokio_stream::Stream;
 use traitclaw_core::traits::provider::{ModelInfo, Provider};
 use traitclaw_core::types::completion::{CompletionRequest, CompletionResponse};
 use traitclaw_core::types::message::{Message, MessageRole};
 use traitclaw_core::types::stream::StreamEvent;
 use traitclaw_core::{Error, Result};
-use schemars::JsonSchema;
-use serde::de::DeserializeOwned;
-use tokio_stream::Stream;
 
 /// A provider wrapper that enforces structured JSON output.
 ///

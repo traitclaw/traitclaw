@@ -1,10 +1,10 @@
 //! `AdaptiveTracker` — monitors agent behavior and exposes tier-based config.
 
+use serde_json::Value;
 use traitclaw_core::traits::provider::ModelTier;
 use traitclaw_core::traits::tracker::Tracker;
 use traitclaw_core::types::agent_state::AgentState;
 use traitclaw_core::types::completion::CompletionResponse;
-use serde_json::Value;
 
 /// Configuration driven by model tier.
 #[derive(Debug, Clone)]

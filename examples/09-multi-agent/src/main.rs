@@ -59,8 +59,12 @@ async fn main() -> anyhow::Result<()> {
     for (attempt, result) in results.iter().enumerate() {
         let icon = if result.is_accepted() { "✅" } else { "🔄" };
         match result {
-            VerifyResult::Accepted(msg) => println!("  {icon} Attempt {}: PASS — {msg}", attempt + 1),
-            VerifyResult::Rejected(msg) => println!("  {icon} Attempt {}: RETRY — {msg}", attempt + 1),
+            VerifyResult::Accepted(msg) => {
+                println!("  {icon} Attempt {}: PASS — {msg}", attempt + 1)
+            }
+            VerifyResult::Rejected(msg) => {
+                println!("  {icon} Attempt {}: RETRY — {msg}", attempt + 1)
+            }
         }
     }
 

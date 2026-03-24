@@ -1,8 +1,8 @@
 //! `ToolBudgetGuard` — limits total tool calls per agent run.
 
+use std::sync::atomic::{AtomicU32, Ordering};
 use traitclaw_core::traits::guard::{Guard, GuardResult, GuardSeverity};
 use traitclaw_core::types::action::Action;
-use std::sync::atomic::{AtomicU32, Ordering};
 
 /// A [`Guard`] that hard-caps the total number of tool calls in a run.
 pub struct ToolBudgetGuard {

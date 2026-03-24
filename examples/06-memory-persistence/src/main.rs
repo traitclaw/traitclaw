@@ -23,11 +23,20 @@ async fn main() -> anyhow::Result<()> {
     // ── 2. Simulate a multi-turn conversation ───────────────
     let turns: Vec<(&str, &str)> = vec![
         ("user", "My name is Alex and I'm learning Rust."),
-        ("assistant", "Nice to meet you, Alex! Rust is a great choice."),
+        (
+            "assistant",
+            "Nice to meet you, Alex! Rust is a great choice.",
+        ),
         ("user", "What should I learn first?"),
-        ("assistant", "Start with ownership and borrowing — they're Rust's core concepts."),
+        (
+            "assistant",
+            "Start with ownership and borrowing — they're Rust's core concepts.",
+        ),
         ("user", "Thanks! I'll focus on that."),
-        ("assistant", "Great plan! Let me know if you need help with examples."),
+        (
+            "assistant",
+            "Great plan! Let me know if you need help with examples.",
+        ),
     ];
 
     for (role, content) in &turns {
@@ -71,7 +80,10 @@ async fn main() -> anyhow::Result<()> {
     println!("\n📚 Long-term memory:");
 
     memory
-        .store(MemoryEntry::now("fact-1", "Ownership is Rust's key innovation"))
+        .store(MemoryEntry::now(
+            "fact-1",
+            "Ownership is Rust's key innovation",
+        ))
         .await?;
     memory
         .store(MemoryEntry::now(

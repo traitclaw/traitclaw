@@ -8,12 +8,12 @@
 use std::io::Write;
 
 use async_trait::async_trait;
+use schemars::JsonSchema;
+use serde::{Deserialize, Serialize};
 use traitclaw::prelude::*;
 use traitclaw_memory_sqlite::SqliteMemory;
 use traitclaw_openai_compat::OpenAiCompatProvider;
 use traitclaw_steering::Steering;
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
 
 // ═══════════════════════════════════════════════════════════
 // Step 3: Tools (+30 lines)

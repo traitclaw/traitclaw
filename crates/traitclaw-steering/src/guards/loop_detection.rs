@@ -1,9 +1,9 @@
 //! `LoopDetectionGuard` — detects repetitive identical tool calls.
 
-use traitclaw_core::traits::guard::{Guard, GuardResult, GuardSeverity};
-use traitclaw_core::types::action::Action;
 use std::collections::VecDeque;
 use std::sync::Mutex;
+use traitclaw_core::traits::guard::{Guard, GuardResult, GuardSeverity};
+use traitclaw_core::types::action::Action;
 
 /// A [`Guard`] that blocks repetitive identical tool calls.
 pub struct LoopDetectionGuard {

@@ -49,7 +49,6 @@ pub(crate) fn stream_agent(agent: &Agent, input: String, session_id: String) -> 
             tracing::warn!("Streaming: failed to save user message to memory: {e}");
         }
 
-
         let tool_schemas = tools.iter().map(|t| t.schema()).collect::<Vec<_>>();
         let state = AgentState::new(model_info.tier, model_info.context_window);
 

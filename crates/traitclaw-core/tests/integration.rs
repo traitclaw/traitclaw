@@ -31,7 +31,10 @@ impl MockProvider {
 
 #[async_trait]
 impl Provider for MockProvider {
-    async fn complete(&self, _req: CompletionRequest) -> traitclaw_core::Result<CompletionResponse> {
+    async fn complete(
+        &self,
+        _req: CompletionRequest,
+    ) -> traitclaw_core::Result<CompletionResponse> {
         Ok(CompletionResponse {
             content: ResponseContent::Text(self.response.clone()),
             usage: Usage {
@@ -154,8 +157,8 @@ async fn test_builder_without_provider_fails() {
 
 // ───────────── Tool Execution Tests ─────────────
 
-use traitclaw_core::types::tool_call::ToolCall;
 use std::sync::atomic::{AtomicUsize, Ordering};
+use traitclaw_core::types::tool_call::ToolCall;
 
 struct ToolCallProvider {
     model_info: ModelInfo,
@@ -173,7 +176,10 @@ impl ToolCallProvider {
 
 #[async_trait]
 impl Provider for ToolCallProvider {
-    async fn complete(&self, _req: CompletionRequest) -> traitclaw_core::Result<CompletionResponse> {
+    async fn complete(
+        &self,
+        _req: CompletionRequest,
+    ) -> traitclaw_core::Result<CompletionResponse> {
         let n = self.call_count.fetch_add(1, Ordering::SeqCst);
         let content = if n == 0 {
             // First call: request a tool call

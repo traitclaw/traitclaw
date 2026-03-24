@@ -89,20 +89,15 @@ pub(crate) async fn run_agent(agent: &Agent, input: &str, session_id: &str) -> R
     )))
 }
 
-
 /// Load conversation context: history + system prompt + user message.
 ///
 /// Memory failures are non-fatal (Story 7.4 AC:3) — if history load fails,
 /// the agent starts with a fresh context instead of crashing.
 async fn load_context(agent: &Agent, session_id: &str, input: &str) -> Result<Vec<Message>> {
-    let mut messages = agent
-        .memory
-        .messages(session_id)
-        .await
-        .unwrap_or_else(|e| {
-            tracing::warn!("Failed to load memory (continuing fresh): {e}");
-            Vec::new()
-        });
+    let mut messages = agent.memory.messages(session_id).await.unwrap_or_else(|e| {
+        tracing::warn!("Failed to load memory (continuing fresh): {e}");
+        Vec::new()
+    });
 
     if let Some(ref system_prompt) = agent.config.system_prompt {
         if messages.is_empty() || messages[0].role != crate::types::message::MessageRole::System {
@@ -120,7 +115,6 @@ async fn load_context(agent: &Agent, session_id: &str, input: &str) -> Result<Ve
 
     Ok(messages)
 }
-
 
 /// Check hints and inject guidance messages.
 fn inject_hints(agent: &Agent, state: &AgentState, messages: &mut Vec<Message>) {

@@ -4,10 +4,10 @@
 //! register them with an agent for function-calling workflows.
 
 use async_trait::async_trait;
-use traitclaw::prelude::*;
-use traitclaw_openai_compat::OpenAiCompatProvider;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use traitclaw::prelude::*;
+use traitclaw_openai_compat::OpenAiCompatProvider;
 
 // ── Tool 1: Calculator ─────────────────────────────────────
 

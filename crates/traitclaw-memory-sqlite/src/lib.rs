@@ -20,11 +20,11 @@
 use std::sync::Mutex;
 
 use async_trait::async_trait;
+use rusqlite::Connection;
+use serde_json::Value;
 use traitclaw_core::traits::memory::{Memory, MemoryEntry};
 use traitclaw_core::types::message::{Message, MessageRole};
 use traitclaw_core::Result;
-use rusqlite::Connection;
-use serde_json::Value;
 
 /// SQLite-backed memory backend.
 ///

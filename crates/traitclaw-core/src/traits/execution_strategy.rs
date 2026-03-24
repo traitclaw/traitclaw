@@ -212,9 +212,8 @@ async fn execute_single(
     for guard in guards {
         let guard_name = guard.name().to_string();
         let action_ref = &action;
-        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            guard.check(action_ref)
-        }));
+        let result =
+            std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| guard.check(action_ref)));
 
         match result {
             Ok(GuardResult::Allow) => {}

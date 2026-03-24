@@ -110,7 +110,6 @@ impl std::fmt::Display for AgentOutput {
     }
 }
 
-
 /// The main agent struct.
 ///
 /// An agent combines an LLM provider, tools, memory, and steering into
@@ -458,4 +457,3 @@ mod tests {
         assert_eq!(out.usage.duration.as_millis(), 500);
     }
 }
-
