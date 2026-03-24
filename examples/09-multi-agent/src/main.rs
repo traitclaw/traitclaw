@@ -4,7 +4,7 @@
 //! to compose multiple agents with specialized roles, and set up
 //! generate-then-verify workflows.
 
-use baseclaw_team::{AgentRole, Team, VerificationChain, VerifyResult};
+use traitclaw_team::{AgentRole, Team, VerificationChain, VerifyResult};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {

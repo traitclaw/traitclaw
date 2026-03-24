@@ -2,7 +2,7 @@
 //!
 //! Demonstrates connecting to Model Context Protocol (MCP) servers
 //! over stdio transport, discovering available tools, and using them
-//! with a BaseClaw agent. MCP tools implement `ErasedTool` so they
+//! with a TraitClaw agent. MCP tools implement `ErasedTool` so they
 //! work seamlessly alongside native tools.
 //!
 //! ## Prerequisites
@@ -12,9 +12,9 @@
 //! npm install -g @modelcontextprotocol/server-filesystem
 //! ```
 
-use baseclaw::prelude::*;
-use baseclaw_mcp::McpServer;
-use baseclaw_openai_compat::OpenAiCompatProvider;
+use traitclaw::prelude::*;
+use traitclaw_mcp::McpServer;
+use traitclaw_openai_compat::OpenAiCompatProvider;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {

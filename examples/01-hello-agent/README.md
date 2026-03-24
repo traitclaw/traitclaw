@@ -1,6 +1,6 @@
 # 01 — Hello Agent
 
-The simplest possible BaseClaw agent in ~5 lines of code.
+The simplest possible TraitClaw agent in ~5 lines of code.
 
 ## What it does
 
@@ -24,7 +24,7 @@ let agent = Agent::builder()
 > The builder pattern configures the agent. `.provider()` sets the LLM backend, `.system()` sets behavior.
 
 ```rust
-let output = agent.run("Hello! What is BaseClaw?").await?;
+let output = agent.run("Hello! What is TraitClaw?").await?;
 println!("{}", output.text());
 ```
 > `.run()` sends a single-turn message and returns an `AgentOutput`. `.text()` extracts the text content as `&str`.

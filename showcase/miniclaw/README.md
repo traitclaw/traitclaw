@@ -1,6 +1,6 @@
 # Miniclaw — Mini AI Assistant Showcase
 
-A complete AI assistant built with BaseClaw in ~150 lines of code.
+A complete AI assistant built with TraitClaw in ~150 lines of code.
 
 ## Progressive Enhancement
 
@@ -31,7 +31,7 @@ cargo run
 
 ## Architecture Validation
 
-This showcase validates BaseClaw's DX promise:
+This showcase validates TraitClaw's DX promise:
 - Each feature adds only a few lines
 - No boilerplate or hacks needed
 - Clean, readable code throughout

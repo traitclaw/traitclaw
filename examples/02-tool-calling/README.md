@@ -1,6 +1,6 @@
 # 02 — Tool Calling
 
-Demonstrates how to define and use tools with BaseClaw agents.
+Demonstrates how to define and use tools with TraitClaw agents.
 
 ## Tools Defined
 

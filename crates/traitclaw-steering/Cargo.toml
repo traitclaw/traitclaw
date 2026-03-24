@@ -1,0 +1,14 @@
+[package]
+name = "traitclaw-steering"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "Built-in Guards, Hints, and Trackers for the TraitClaw AI agent framework"
+
+[dependencies]
+traitclaw-core = { workspace = true }
+async-trait = { workspace = true }
+tracing = { workspace = true }
+serde_json = { workspace = true }
+regex = "1"

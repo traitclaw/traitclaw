@@ -4,9 +4,9 @@
 //! agent restarts. The memory backend stores messages, working memory,
 //! and long-term knowledge in a single SQLite database file.
 
-use baseclaw::prelude::*;
-use baseclaw_core::traits::memory::MemoryEntry;
-use baseclaw_memory_sqlite::SqliteMemory;
+use traitclaw::prelude::*;
+use traitclaw_core::traits::memory::MemoryEntry;
+use traitclaw_memory_sqlite::SqliteMemory;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {

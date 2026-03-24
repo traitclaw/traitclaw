@@ -1,0 +1,33 @@
+[package]
+name = "traitclaw"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "A Rust AI Agent Framework — Simple by default, powerful when needed"
+
+[dependencies]
+traitclaw-core = { workspace = true }
+traitclaw-macros = { workspace = true }
+traitclaw-openai-compat = { workspace = true, optional = true }
+traitclaw-steering = { workspace = true, optional = true }
+traitclaw-memory-sqlite = { workspace = true, optional = true }
+traitclaw-mcp = { workspace = true, optional = true }
+traitclaw-rag = { workspace = true, optional = true }
+traitclaw-team = { workspace = true, optional = true }
+traitclaw-eval = { workspace = true, optional = true }
+schemars = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+[features]
+default = ["openai-compat", "macros"]
+macros = []
+openai-compat = ["dep:traitclaw-openai-compat"]
+steering = ["dep:traitclaw-steering"]
+sqlite = ["dep:traitclaw-memory-sqlite"]
+mcp = ["dep:traitclaw-mcp"]
+rag = ["dep:traitclaw-rag"]
+team = ["dep:traitclaw-team"]
+eval = ["dep:traitclaw-eval"]
+full = ["openai-compat", "macros", "steering", "sqlite", "mcp", "rag", "team", "eval"]

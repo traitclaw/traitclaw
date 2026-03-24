@@ -1,4 +1,4 @@
-//! # Miniclaw — A mini AI assistant built with BaseClaw
+//! # Miniclaw — A mini AI assistant built with TraitClaw
 //!
 //! Demonstrates progressive enhancement: start with a basic agent,
 //! then add memory, tools, and steering — each in just a few lines.
@@ -8,10 +8,10 @@
 use std::io::Write;
 
 use async_trait::async_trait;
-use baseclaw::prelude::*;
-use baseclaw_memory_sqlite::SqliteMemory;
-use baseclaw_openai_compat::OpenAiCompatProvider;
-use baseclaw_steering::Steering;
+use traitclaw::prelude::*;
+use traitclaw_memory_sqlite::SqliteMemory;
+use traitclaw_openai_compat::OpenAiCompatProvider;
+use traitclaw_steering::Steering;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -45,7 +45,7 @@ impl Tool for ReadFileTool {
         "Read the contents of a file from disk"
     }
 
-    async fn execute(&self, input: Self::Input) -> baseclaw::Result<Self::Output> {
+    async fn execute(&self, input: Self::Input) -> traitclaw::Result<Self::Output> {
         let content = std::fs::read_to_string(&input.path)
             .unwrap_or_else(|e| format!("Error reading {}: {e}", input.path));
         Ok(ReadFileOutput { content })
@@ -78,7 +78,7 @@ impl Tool for WebSearchTool {
         "Search the web for information"
     }
 
-    async fn execute(&self, input: Self::Input) -> baseclaw::Result<Self::Output> {
+    async fn execute(&self, input: Self::Input) -> traitclaw::Result<Self::Output> {
         Ok(SearchOutput {
             results: vec![
                 format!("Result 1 for: {}", input.query),
@@ -114,7 +114,7 @@ async fn main() -> anyhow::Result<()> {
     let agent = Agent::builder()
         .provider(provider)
         .system(
-            "You are Miniclaw, a helpful AI assistant built with BaseClaw. \
+            "You are Miniclaw, a helpful AI assistant built with TraitClaw. \
              You have access to tools for reading files and searching the web. \
              Be concise and helpful.",
         )

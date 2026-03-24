@@ -5,7 +5,7 @@ edition = "2021"
 publish = false
 
 [dependencies]
-baseclaw = { path = "../../crates/baseclaw" }
-baseclaw-openai-compat = { path = "../../crates/baseclaw-openai-compat" }
+traitclaw = { path = "../../crates/traitclaw" }
+traitclaw-openai-compat = { path = "../../crates/traitclaw-openai-compat" }
 tokio = { version = "1", features = ["full"] }
 anyhow = "1"

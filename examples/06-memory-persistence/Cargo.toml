@@ -5,9 +5,9 @@ edition = "2021"
 publish = false
 
 [dependencies]
-baseclaw = { path = "../../crates/baseclaw" }
-baseclaw-core = { path = "../../crates/baseclaw-core" }
-baseclaw-memory-sqlite = { path = "../../crates/baseclaw-memory-sqlite" }
+traitclaw = { path = "../../crates/traitclaw" }
+traitclaw-core = { path = "../../crates/traitclaw-core" }
+traitclaw-memory-sqlite = { path = "../../crates/traitclaw-memory-sqlite" }
 tokio = { version = "1", features = ["full"] }
 anyhow = "1"
 serde_json = "1"

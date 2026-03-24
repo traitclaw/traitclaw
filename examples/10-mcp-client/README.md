@@ -6,7 +6,7 @@ Connect to Model Context Protocol servers for external tools.
 
 1. Connects to an **MCP filesystem server** via stdio transport
 2. Discovers available tools automatically
-3. Registers MCP tools with a BaseClaw agent (they implement `ErasedTool`)
+3. Registers MCP tools with a TraitClaw agent (they implement `ErasedTool`)
 
 ## Prerequisites
 

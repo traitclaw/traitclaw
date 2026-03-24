@@ -1,11 +1,11 @@
-//! # Tool Calling — Defining and using tools with BaseClaw
+//! # Tool Calling — Defining and using tools with TraitClaw
 //!
 //! Demonstrates how to define custom tools using the `Tool` trait and
 //! register them with an agent for function-calling workflows.
 
 use async_trait::async_trait;
-use baseclaw::prelude::*;
-use baseclaw_openai_compat::OpenAiCompatProvider;
+use traitclaw::prelude::*;
+use traitclaw_openai_compat::OpenAiCompatProvider;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -37,7 +37,7 @@ impl Tool for Calculator {
         "Evaluate a mathematical expression"
     }
 
-    async fn execute(&self, input: Self::Input) -> baseclaw::Result<Self::Output> {
+    async fn execute(&self, input: Self::Input) -> traitclaw::Result<Self::Output> {
         let result = format!("Result of '{}' = (computed)", input.expression);
         Ok(CalculatorOutput { result })
     }
@@ -72,7 +72,7 @@ impl Tool for WeatherLookup {
         "Get current weather for a city"
     }
 
-    async fn execute(&self, input: Self::Input) -> baseclaw::Result<Self::Output> {
+    async fn execute(&self, input: Self::Input) -> traitclaw::Result<Self::Output> {
         Ok(WeatherOutput {
             temperature: "22°C".into(),
             condition: format!("Sunny in {}", input.city),

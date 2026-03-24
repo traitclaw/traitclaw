@@ -1,13 +1,13 @@
 //! # Steering — Guards, Hints, and auto-configuration
 //!
-//! Demonstrates using BaseClaw's steering system to protect and guide agents
+//! Demonstrates using TraitClaw's steering system to protect and guide agents
 //! with Guards (block harmful content), Hints (inject context), and
 //! the `Steering::auto()` one-liner for automatic configuration.
 
-use baseclaw::prelude::*;
-use baseclaw_openai_compat::OpenAiCompatProvider;
-use baseclaw_steering::guards::ShellDenyGuard;
-use baseclaw_steering::Steering;
+use traitclaw::prelude::*;
+use traitclaw_openai_compat::OpenAiCompatProvider;
+use traitclaw_steering::guards::ShellDenyGuard;
+use traitclaw_steering::Steering;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {

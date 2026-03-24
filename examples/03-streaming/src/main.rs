@@ -1,10 +1,10 @@
-//! # Streaming — Real-time incremental responses with BaseClaw
+//! # Streaming — Real-time incremental responses with TraitClaw
 //!
 //! Demonstrates using `agent.stream()` to receive and display text
 //! as it arrives from the LLM, providing a real-time chat experience.
 
-use baseclaw::prelude::*;
-use baseclaw_openai_compat::OpenAiCompatProvider;
+use traitclaw::prelude::*;
+use traitclaw_openai_compat::OpenAiCompatProvider;
 use tokio_stream::StreamExt;
 
 #[tokio::main]

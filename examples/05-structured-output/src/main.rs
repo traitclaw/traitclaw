@@ -1,12 +1,12 @@
-//! # Structured Output — Type-safe JSON responses with BaseClaw
+//! # Structured Output — Type-safe JSON responses with TraitClaw
 //!
 //! Demonstrates using `agent.run_structured::<T>()` to get responses
 //! that are automatically parsed into Rust types. The framework injects
 //! the JSON schema into the prompt (or uses native structured output
 //! when the model supports it).
 
-use baseclaw::prelude::*;
-use baseclaw_openai_compat::OpenAiCompatProvider;
+use traitclaw::prelude::*;
+use traitclaw_openai_compat::OpenAiCompatProvider;
 use schemars::JsonSchema;
 use serde::Deserialize;
 

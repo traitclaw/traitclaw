@@ -3,7 +3,7 @@
 # Version: 6.2.0
 # Date: 2026-03-23T14:02:34.769Z
 
-project_name: baseclaw
+project_name: traitclaw
 user_skill_level: intermediate
 planning_artifacts: "{project-root}/_bmad-output/planning-artifacts"
 implementation_artifacts: "{project-root}/_bmad-output/implementation-artifacts"

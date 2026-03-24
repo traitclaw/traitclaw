@@ -1,10 +1,10 @@
-//! # Hello Agent — The simplest BaseClaw agent
+//! # Hello Agent — The simplest TraitClaw agent
 //!
 //! This example demonstrates creating an AI agent in ~5 lines of code.
 //! It showcases the full pipeline: Builder → Provider → LLM call → Response.
 
-use baseclaw::prelude::*;
-use baseclaw_openai_compat::OpenAiCompatProvider;
+use traitclaw::prelude::*;
+use traitclaw_openai_compat::OpenAiCompatProvider;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -21,7 +21,7 @@ async fn main() -> anyhow::Result<()> {
         .build()?;
 
     // 3. Run a single turn and print the response
-    let output = agent.run("Hello! What is BaseClaw?").await?;
+    let output = agent.run("Hello! What is TraitClaw?").await?;
     println!("{}", output.text());
 
     Ok(())

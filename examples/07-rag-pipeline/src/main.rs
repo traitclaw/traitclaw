@@ -1,12 +1,12 @@
-//! # RAG Pipeline — Retrieval-Augmented Generation with BaseClaw
+//! # RAG Pipeline — Retrieval-Augmented Generation with TraitClaw
 //!
 //! Demonstrates using `KeywordRetriever` and `GroundingStrategy` to
 //! retrieve relevant documents and inject them as context for the agent.
 //! No external vector database required — uses built-in BM25 scoring.
 
-use baseclaw::prelude::*;
-use baseclaw_openai_compat::OpenAiCompatProvider;
-use baseclaw_rag::{Document, GroundingStrategy, KeywordRetriever, PrependStrategy, Retriever};
+use traitclaw::prelude::*;
+use traitclaw_openai_compat::OpenAiCompatProvider;
+use traitclaw_rag::{Document, GroundingStrategy, KeywordRetriever, PrependStrategy, Retriever};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {

@@ -4,7 +4,7 @@
 //! agent response quality. Run evaluations deterministically without
 //! hitting a real LLM API — metrics score raw text against expectations.
 
-use baseclaw_eval::{
+use traitclaw_eval::{
     EvalReport, EvalSuite, KeywordMetric, LengthRelevancyMetric, Metric, TestCase, TestResult,
 };
 
@@ -13,7 +13,7 @@ async fn main() -> anyhow::Result<()> {
     println!("📊 Agent Evaluation Suite Demo\n");
 
     // ── 1. Define your evaluation suite ─────────────────────
-    let suite = EvalSuite::new("baseclaw_quality")
+    let suite = EvalSuite::new("traitclaw_quality")
         .add_case(
             TestCase::new("greeting", "Say hello to the user")
                 .expect_contains("hello")
