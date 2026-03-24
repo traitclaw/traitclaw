@@ -13,6 +13,11 @@ members = [
     "crates/baseclaw-rag",
     "crates/baseclaw-team",
     "crates/baseclaw-eval",
+    "examples/01-hello-agent",
+    "examples/02-tool-calling",
+    "examples/03-streaming",
+    "examples/04-steering",
+    "showcase/miniclaw",
 ]
 
 [workspace.package]
