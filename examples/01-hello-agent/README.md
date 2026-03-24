@@ -11,23 +11,23 @@ The simplest possible BaseClaw agent in ~5 lines of code.
 ## Line-by-line explanation
 
 ```rust
-let provider = OpenAiCompatProvider::new("gpt-4o-mini", api_key, url);
+let provider = OpenAiCompatProvider::openai("gpt-4o-mini", api_key);
 ```
 > Creates a provider for any OpenAI-compatible API (OpenAI, Groq, Together, etc.)
 
 ```rust
 let agent = Agent::builder()
     .provider(provider)
-    .system_prompt("You are a friendly assistant.")
+    .system("You are a friendly assistant. Keep responses brief.")
     .build()?;
 ```
-> The builder pattern configures the agent. `.provider()` sets the LLM backend, `.system_prompt()` sets behavior.
+> The builder pattern configures the agent. `.provider()` sets the LLM backend, `.system()` sets behavior.
 
 ```rust
-let response = agent.run("Hello!").await?;
-println!("{}", response.text().unwrap_or("No response"));
+let output = agent.run("Hello! What is BaseClaw?").await?;
+println!("{}", output.text());
 ```
-> `.run()` sends a single-turn message and returns a `CompletionResponse`. `.text()` extracts the text content.
+> `.run()` sends a single-turn message and returns an `AgentOutput`. `.text()` extracts the text content as `&str`.
 
 ## Running
 

@@ -1,0 +1,12 @@
+[package]
+name = "multi-agent"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+baseclaw = { path = "../../crates/baseclaw" }
+baseclaw-team = { path = "../../crates/baseclaw-team" }
+baseclaw-openai-compat = { path = "../../crates/baseclaw-openai-compat" }
+tokio = { version = "1", features = ["full"] }
+anyhow = "1"

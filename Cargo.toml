@@ -17,6 +17,12 @@ members = [
     "examples/02-tool-calling",
     "examples/03-streaming",
     "examples/04-steering",
+    "examples/05-structured-output",
+    "examples/06-memory-persistence",
+    "examples/07-rag-pipeline",
+    "examples/08-eval-suite",
+    "examples/09-multi-agent",
+    "examples/10-mcp-client",
     "showcase/miniclaw",
 ]
 

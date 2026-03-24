@@ -1,0 +1,12 @@
+[package]
+name = "mcp-client"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+baseclaw = { path = "../../crates/baseclaw" }
+baseclaw-mcp = { path = "../../crates/baseclaw-mcp" }
+baseclaw-openai-compat = { path = "../../crates/baseclaw-openai-compat" }
+tokio = { version = "1", features = ["full"] }
+anyhow = "1"
