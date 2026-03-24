@@ -50,7 +50,7 @@ async fn main() -> anyhow::Result<()> {
     println!("  Max retries: {}", chain.max_retries);
 
     // Simulate a verification workflow
-    let results = vec![
+    let results = [
         VerifyResult::Rejected("Grammar issues found in paragraph 2".into()),
         VerifyResult::Rejected("Missing source citation for claim about performance".into()),
         VerifyResult::Accepted("Content meets all quality standards".into()),
