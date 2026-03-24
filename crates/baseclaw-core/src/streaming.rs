@@ -70,6 +70,7 @@ pub(crate) fn stream_agent(agent: &Agent, input: String, session_id: String) -> 
                 tools: tool_schemas.clone(),
                 max_tokens: config.max_tokens,
                 temperature: config.temperature,
+                response_format: None,
                 stream: true,
             };
 

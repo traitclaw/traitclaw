@@ -121,3 +121,33 @@ impl Tracker for AdaptiveTracker {
         self.config.concurrency
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_small_tier_concurrency() {
+        let tracker = AdaptiveTracker::for_tier(&ModelTier::Small);
+        let state = AgentState::new(ModelTier::Small, 4096);
+        assert_eq!(tracker.recommended_concurrency(&state), 1);
+    }
+
+    #[test]
+    fn test_large_tier_concurrency() {
+        let tracker = AdaptiveTracker::for_tier(&ModelTier::Large);
+        let state = AgentState::new(ModelTier::Large, 128_000);
+        assert_eq!(tracker.recommended_concurrency(&state), usize::MAX);
+    }
+
+    #[test]
+    fn test_tier_config_values() {
+        let small = TierConfig::small();
+        assert_eq!(small.concurrency, 1);
+        assert_eq!(small.hint_frequency, 3);
+
+        let large = TierConfig::large();
+        assert_eq!(large.concurrency, usize::MAX);
+        assert_eq!(large.hint_frequency, 12);
+    }
+}

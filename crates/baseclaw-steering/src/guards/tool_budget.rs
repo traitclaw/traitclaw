@@ -58,3 +58,46 @@ impl Guard for ToolBudgetGuard {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn tool_action() -> Action {
+        Action::ToolCall {
+            name: "test".into(),
+            arguments: serde_json::Value::Null,
+        }
+    }
+
+    #[test]
+    fn test_allows_within_budget() {
+        let guard = ToolBudgetGuard::new(3);
+        assert!(matches!(guard.check(&tool_action()), GuardResult::Allow));
+        assert!(matches!(guard.check(&tool_action()), GuardResult::Allow));
+        assert!(matches!(guard.check(&tool_action()), GuardResult::Allow));
+    }
+
+    #[test]
+    fn test_blocks_after_budget_exhausted() {
+        let guard = ToolBudgetGuard::new(2);
+        assert!(matches!(guard.check(&tool_action()), GuardResult::Allow));
+        assert!(matches!(guard.check(&tool_action()), GuardResult::Allow));
+        assert!(matches!(
+            guard.check(&tool_action()),
+            GuardResult::Deny { .. }
+        ));
+    }
+
+    #[test]
+    fn test_reset_restores_budget() {
+        let guard = ToolBudgetGuard::new(1);
+        assert!(matches!(guard.check(&tool_action()), GuardResult::Allow));
+        assert!(matches!(
+            guard.check(&tool_action()),
+            GuardResult::Deny { .. }
+        ));
+        guard.reset();
+        assert!(matches!(guard.check(&tool_action()), GuardResult::Allow));
+    }
+}

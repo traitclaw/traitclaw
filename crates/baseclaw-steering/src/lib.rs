@@ -23,7 +23,10 @@
 
 pub mod guards;
 pub mod hints;
+pub mod steering;
 pub mod trackers;
+
+pub use steering::Steering;
 
 /// Convenience prelude — import everything at once.
 pub mod prelude {
@@ -32,5 +35,6 @@ pub mod prelude {
         WorkspaceBoundaryGuard,
     };
     pub use crate::hints::{BudgetHint, SystemPromptReminder, TeamProgressHint, TruncationHint};
+    pub use crate::steering::Steering;
     pub use crate::trackers::AdaptiveTracker;
 }

@@ -60,3 +60,41 @@ impl Hint for SystemPromptReminder {
         InjectionPoint::RecencyZone
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use baseclaw_core::types::model_info::ModelTier;
+
+    #[test]
+    fn test_triggers_at_correct_interval() {
+        let hint = SystemPromptReminder::every(5).rules(["Be concise"]);
+        let mut s = AgentState::new(ModelTier::Small, 4096);
+        s.iteration_count = 5;
+        assert!(hint.should_trigger(&s));
+    }
+
+    #[test]
+    fn test_does_not_trigger_off_interval() {
+        let hint = SystemPromptReminder::every(5).rules(["Be concise"]);
+        let mut s = AgentState::new(ModelTier::Small, 4096);
+        s.iteration_count = 3;
+        assert!(!hint.should_trigger(&s));
+    }
+
+    #[test]
+    fn test_never_triggers_at_zero() {
+        let hint = SystemPromptReminder::every(5);
+        let s = AgentState::new(ModelTier::Small, 4096);
+        assert!(!hint.should_trigger(&s));
+    }
+
+    #[test]
+    fn test_message_includes_rules() {
+        let hint = SystemPromptReminder::every(5).rules(["Be concise", "No profanity"]);
+        let s = AgentState::new(ModelTier::Small, 4096);
+        let msg = hint.generate(&s);
+        assert!(msg.content.contains("Be concise"));
+        assert!(msg.content.contains("No profanity"));
+    }
+}

@@ -14,6 +14,7 @@ use crate::traits::output_processor::OutputProcessor;
 use crate::traits::provider::Provider;
 use crate::traits::tool::ErasedTool;
 use crate::traits::tracker::Tracker;
+use crate::types::message::Message;
 use crate::Result;
 
 /// Output from an agent run.
@@ -163,24 +164,95 @@ impl Agent {
     /// The LLM is instructed to return JSON matching type `T`'s schema.
     /// If deserialization fails, retries up to 3 times with feedback.
     ///
+    /// When the provider's model supports native structured-output
+    /// (`model_info.supports_structured == true`), the `response_format`
+    /// is set on the `CompletionRequest` for guaranteed valid JSON.
+    /// Otherwise, schema instructions are injected into the system prompt.
+    ///
     /// # Errors
     ///
     /// Returns an error if the provider fails or deserialization fails
     /// after retries.
-    ///
-    /// # Note
-    ///
-    /// Not yet implemented — will be completed in Story 3.3.
-    ///
-    /// FIXME(story-3.3): change to `async fn` when the full implementation lands.
-    pub fn run_structured<T>(&self, _input: &str) -> Result<T>
+    pub async fn run_structured<T>(&self, input: &str) -> Result<T>
     where
         T: serde::de::DeserializeOwned + schemars::JsonSchema,
     {
-        // Will be implemented in Story 3.3
-        Err(crate::Error::Runtime(
-            "Structured output not yet implemented".into(),
-        ))
+        let model_info = self.provider.model_info();
+        let schema = schemars::schema_for!(T);
+        let schema_json = serde_json::to_value(&schema)
+            .map_err(|e| crate::Error::Runtime(format!("Failed to serialize schema: {e}")))?;
+
+        let uses_native = model_info.supports_structured;
+
+        let mut messages = vec![];
+        if let Some(ref system_prompt) = self.config.system_prompt {
+            messages.push(Message::system(system_prompt));
+        }
+
+        // If the model doesn't support native structured output, inject schema instructions
+        if !uses_native {
+            let schema_str = serde_json::to_string_pretty(&schema_json)
+                .unwrap_or_else(|_| schema_json.to_string());
+            messages.push(Message::system(format!(
+                "You MUST respond ONLY with valid JSON matching this schema:\n```json\n{schema_str}\n```\nDo NOT include any text before or after the JSON."
+            )));
+        }
+
+        messages.push(Message::user(input));
+
+        let max_retries = 3;
+        let mut last_error = String::new();
+
+        for attempt in 0..=max_retries {
+            if attempt > 0 {
+                // Add retry feedback
+                messages.push(Message::system(format!(
+                    "Your previous response was not valid JSON. Error: {last_error}\n\
+                     Please try again. Respond ONLY with valid JSON."
+                )));
+            }
+
+            let response_format = if uses_native {
+                Some(crate::types::completion::ResponseFormat::JsonSchema {
+                    json_schema: schema_json.clone(),
+                })
+            } else {
+                None
+            };
+
+            let request = crate::types::completion::CompletionRequest {
+                model: model_info.name.clone(),
+                messages: messages.clone(),
+                tools: vec![],
+                max_tokens: self.config.max_tokens,
+                temperature: self.config.temperature,
+                response_format,
+                stream: false,
+            };
+
+            let response = self.provider.complete(request).await?;
+
+            let text = match response.content {
+                crate::types::completion::ResponseContent::Text(t) => t,
+                crate::types::completion::ResponseContent::ToolCalls(_) => {
+                    last_error = "Model returned tool calls instead of JSON".into();
+                    messages.push(Message::assistant("[tool calls returned]"));
+                    continue;
+                }
+            };
+
+            match serde_json::from_str::<T>(&text) {
+                Ok(value) => return Ok(value),
+                Err(e) => {
+                    last_error = format!("{e}");
+                    messages.push(Message::assistant(&text));
+                }
+            }
+        }
+
+        Err(crate::Error::Runtime(format!(
+            "Structured output failed after {max_retries} retries. Last error: {last_error}"
+        )))
     }
 }
 

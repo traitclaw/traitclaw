@@ -189,6 +189,7 @@ mod tests {
             tools: vec![],
             max_tokens: None,
             temperature: None,
+            response_format: None,
             stream: false,
         }
     }

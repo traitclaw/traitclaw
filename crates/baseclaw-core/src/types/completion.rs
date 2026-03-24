@@ -28,11 +28,30 @@ pub struct CompletionRequest {
     /// Sampling temperature (0.0–2.0).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub temperature: Option<f32>,
+    /// Response format — when set, constrains the model to output JSON
+    /// matching a specific schema (structured output).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub response_format: Option<ResponseFormat>,
     /// Whether to stream the response.
     /// RUNTIME-ONLY: excluded from JSON (de)serialization — always defaults to
     /// `false` regardless of what is present in the JSON source.
     #[serde(skip)]
     pub stream: bool,
+}
+
+/// Response format constraint for structured output.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum ResponseFormat {
+    /// Constrain output to valid JSON matching the given schema.
+    #[serde(rename = "json_schema")]
+    JsonSchema {
+        /// The JSON Schema the model must follow.
+        json_schema: serde_json::Value,
+    },
+    /// Constrain output to valid JSON (no schema enforcement).
+    #[serde(rename = "json_object")]
+    JsonObject,
 }
 
 /// The content of a completion response — either text or tool calls.
@@ -86,6 +105,7 @@ mod tests {
             tools: vec![],
             max_tokens: Some(1000),
             temperature: Some(0.7),
+            response_format: None,
             stream: false,
         };
         assert_eq!(request.model, "gpt-4o");
@@ -102,6 +122,7 @@ mod tests {
             tools: vec![],
             max_tokens: None,
             temperature: None,
+            response_format: None,
             stream: false,
         };
         let json = serde_json::to_string(&request).unwrap();

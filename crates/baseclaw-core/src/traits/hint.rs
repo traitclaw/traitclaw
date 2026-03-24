@@ -88,3 +88,41 @@ impl Hint for NoopHint {
         InjectionPoint::BeforeNextLlmCall
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::types::agent_state::AgentState;
+    use crate::types::model_info::ModelTier;
+
+    #[test]
+    fn test_noop_hint_never_triggers() {
+        let hint = NoopHint;
+        let state = AgentState::new(ModelTier::Small, 4096);
+        assert!(
+            !hint.should_trigger(&state),
+            "NoopHint should never trigger"
+        );
+    }
+
+    #[test]
+    fn test_noop_hint_generates_empty_message() {
+        let hint = NoopHint;
+        let state = AgentState::new(ModelTier::Small, 4096);
+        let msg = hint.generate(&state);
+        assert!(msg.content.is_empty());
+        assert_eq!(msg.priority, HintPriority::Low);
+    }
+
+    #[test]
+    fn test_noop_hint_injection_point() {
+        let hint = NoopHint;
+        assert_eq!(hint.injection_point(), InjectionPoint::BeforeNextLlmCall);
+    }
+
+    #[test]
+    fn test_noop_hint_name() {
+        let hint = NoopHint;
+        assert_eq!(hint.name(), "noop");
+    }
+}

@@ -41,3 +41,31 @@ impl Tracker for NoopTracker {
         usize::MAX
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::types::agent_state::AgentState;
+    use crate::types::model_info::ModelTier;
+
+    #[test]
+    fn test_noop_tracker_recommended_concurrency() {
+        let tracker = NoopTracker;
+        let state = AgentState::new(ModelTier::Small, 4096);
+        assert_eq!(tracker.recommended_concurrency(&state), usize::MAX);
+    }
+
+    #[test]
+    fn test_noop_tracker_callbacks_do_nothing() {
+        let tracker = NoopTracker;
+        let mut state = AgentState::new(ModelTier::Small, 4096);
+        let initial_iter = state.iteration_count;
+
+        // These should be genuine no-ops
+        tracker.on_iteration(&mut state);
+        tracker.on_tool_call("test", &serde_json::json!({}), &mut state);
+
+        // State should NOT be modified by NoopTracker
+        assert_eq!(state.iteration_count, initial_iter);
+    }
+}

@@ -67,3 +67,59 @@ impl Guard for LoopDetectionGuard {
         GuardResult::Allow
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn tool_call(name: &str, args: &str) -> Action {
+        Action::ToolCall {
+            name: name.into(),
+            arguments: serde_json::Value::String(args.into()),
+        }
+    }
+
+    #[test]
+    fn test_allows_first_calls() {
+        let guard = LoopDetectionGuard::new(3, 10);
+        let action = tool_call("echo", "hello");
+        assert!(matches!(guard.check(&action), GuardResult::Allow));
+        assert!(matches!(guard.check(&action), GuardResult::Allow));
+        assert!(matches!(guard.check(&action), GuardResult::Allow));
+    }
+
+    #[test]
+    fn test_blocks_after_max_repeats() {
+        let guard = LoopDetectionGuard::new(2, 10);
+        let action = tool_call("echo", "hello");
+        assert!(matches!(guard.check(&action), GuardResult::Allow));
+        assert!(matches!(guard.check(&action), GuardResult::Allow));
+        assert!(matches!(guard.check(&action), GuardResult::Deny { .. }));
+    }
+
+    #[test]
+    fn test_different_args_not_a_loop() {
+        let guard = LoopDetectionGuard::new(2, 10);
+        assert!(matches!(
+            guard.check(&tool_call("echo", "a")),
+            GuardResult::Allow
+        ));
+        assert!(matches!(
+            guard.check(&tool_call("echo", "b")),
+            GuardResult::Allow
+        ));
+        assert!(matches!(
+            guard.check(&tool_call("echo", "c")),
+            GuardResult::Allow
+        ));
+    }
+
+    #[test]
+    fn test_allows_non_tool_actions() {
+        let guard = LoopDetectionGuard::new(1, 10);
+        let action = Action::RawOutput {
+            content: "test".into(),
+        };
+        assert!(matches!(guard.check(&action), GuardResult::Allow));
+    }
+}
