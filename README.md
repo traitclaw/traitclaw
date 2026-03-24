@@ -116,6 +116,14 @@ TraitClaw is built entirely on Rust **traits**. There is no vendor lock-in, no h
 
 Because it relies on dynamic dispatch where flexibility is needed (e.g., `Box<dyn Tool>`) and static typing everywhere else, TraitClaw achieves zero-cost abstractions for the core loop.
 
+### 🔄 The Agent Loop (Core Engine)
+The true power of TraitClaw lies in how the `Agent` manages the execution loop securely and autonomously:
+1. **Context Hydration**: The agent retrieves past dialogue from `Memory` and appends the user's new prompt.
+2. **Provider Generation**: The `Provider` evaluates the context. It can either generate a final text response or request to execute a `Tool`.
+3. **Tool Resolution & Execution**: If a tool is requested, the Agent automatically parses the arguments, executes the corresponding Rust function, and appends the `ToolResult` back into the context.
+4. **Recursive Reasoning**: The Provider evaluates the tool's result. Steps 2 & 3 repeat until the Provider determines the task is complete.
+5. **Memory Commit**: The final trajectory is saved back to `Memory`.
+
 ## 🚀 Extensibility
 
 Extending TraitClaw is as simple as implementing a trait.
