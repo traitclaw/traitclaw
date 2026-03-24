@@ -4,12 +4,20 @@
 //!
 //! ```rust,ignore
 //! use baseclaw::Tool;
+//! use schemars::JsonSchema;
+//! use serde::Deserialize;
 //!
-//! #[derive(Tool)]
+//! #[derive(Tool, Deserialize, JsonSchema)]
 //! #[tool(description = "Search the web for information")]
 //! struct WebSearch {
 //!     /// The search query
 //!     query: String,
+//! }
+//!
+//! impl WebSearch {
+//!     async fn execute(&self) -> baseclaw_core::Result<serde_json::Value> {
+//!         Ok(serde_json::json!({"results": []}))
+//!     }
 //! }
 //! ```
 
@@ -18,12 +26,17 @@ use proc_macro2::TokenStream as TokenStream2;
 use quote::quote;
 use syn::{parse_macro_input, Data, DeriveInput};
 
-/// Derive the `Tool` schema boilerplate for a struct.
+/// Derive the `ErasedTool` implementation boilerplate for a struct.
+///
+/// The struct itself acts as the tool's Input type and MUST derive
+/// `serde::Deserialize` and `schemars::JsonSchema`.
+///
+/// The user MUST provide an inherent `execute(&self) -> Result<serde_json::Value>` method.
 ///
 /// # Attributes
 ///
 /// - `#[tool(description = "...")]` — tool description (required)
-/// - `#[tool(name = "...")]` — override tool name (optional)
+/// - `#[tool(name = "...")]` — override tool name (optional, defaults to snake_case)
 #[proc_macro_derive(Tool, attributes(tool))]
 pub fn derive_tool(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
@@ -47,7 +60,7 @@ fn expand_tool(input: DeriveInput) -> syn::Result<TokenStream2> {
 
     let struct_name = &input.ident;
 
-    // Parse #[tool(...)] attributes using syn v2 API
+    // Parse #[tool(...)] attributes
     let mut description: Option<String> = None;
     let mut name_override: Option<String> = None;
 
@@ -68,10 +81,10 @@ fn expand_tool(input: DeriveInput) -> syn::Result<TokenStream2> {
     }
 
     let description = description.unwrap_or_else(|| to_title_case(&struct_name.to_string()));
-
     let tool_name = name_override.unwrap_or_else(|| to_snake_case(&struct_name.to_string()));
 
     let expanded = quote! {
+        // Inherent helper methods for static access
         impl #struct_name {
             /// Returns the statically known tool name.
             pub fn tool_name() -> &'static str {
@@ -92,6 +105,36 @@ fn expand_tool(input: DeriveInput) -> syn::Result<TokenStream2> {
                     parameters: serde_json::to_value(schema)
                         .unwrap_or_else(|_| serde_json::Value::Object(Default::default())),
                 }
+            }
+        }
+
+        // ErasedTool impl — the struct IS the input type.
+        // The user must provide:
+        //   `async fn execute(&self) -> baseclaw_core::Result<serde_json::Value>`
+        #[async_trait::async_trait]
+        impl baseclaw_core::ErasedTool for #struct_name {
+            fn name(&self) -> &str {
+                #tool_name
+            }
+
+            fn description(&self) -> &str {
+                #description
+            }
+
+            fn schema(&self) -> baseclaw_core::ToolSchema {
+                #struct_name::tool_schema()
+            }
+
+            async fn execute_json(
+                &self,
+                input: serde_json::Value,
+            ) -> baseclaw_core::Result<serde_json::Value> {
+                let typed: #struct_name = serde_json::from_value(input)
+                    .map_err(|e| baseclaw_core::Error::tool_execution(
+                        #tool_name,
+                        format!("Invalid input: {e}"),
+                    ))?;
+                typed.execute().await
             }
         }
     };

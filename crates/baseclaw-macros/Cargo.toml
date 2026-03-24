@@ -18,6 +18,8 @@ serde_json = { workspace = true }
 
 [dev-dependencies]
 baseclaw-core = { workspace = true }
+async-trait = { workspace = true }
 schemars = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
+tokio = { workspace = true }

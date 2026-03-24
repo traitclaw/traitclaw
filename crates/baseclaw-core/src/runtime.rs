@@ -39,6 +39,7 @@ pub(crate) async fn run_agent(agent: &Agent, input: &str, session_id: &str) -> R
             tools: tool_schemas.clone(),
             max_tokens: agent.config.max_tokens,
             temperature: agent.config.temperature,
+            response_format: None,
             stream: false,
         };
 
@@ -406,5 +407,79 @@ mod tests {
 
         let output = agent.run("Try echo").await.unwrap();
         assert_eq!(output.text(), "Guard blocked me");
+    }
+
+    #[tokio::test]
+    async fn test_unknown_tool_returns_error_message() {
+        // AC-5: If tool name not found → returns error message to LLM (no crash)
+        let responses = vec![
+            CompletionResponse {
+                content: ResponseContent::ToolCalls(vec![ToolCall {
+                    id: "call_bad".into(),
+                    name: "nonexistent_tool".into(),
+                    arguments: serde_json::json!({}),
+                }]),
+                usage: Usage {
+                    prompt_tokens: 10,
+                    completion_tokens: 5,
+                    total_tokens: 15,
+                },
+            },
+            CompletionResponse {
+                content: ResponseContent::Text("I see the error".into()),
+                usage: Usage {
+                    prompt_tokens: 20,
+                    completion_tokens: 5,
+                    total_tokens: 25,
+                },
+            },
+        ];
+
+        let agent = Agent::builder()
+            .model(SequenceProvider::with_responses(responses))
+            .system("You are a test bot")
+            .tool(EchoTool)
+            .build()
+            .unwrap();
+
+        let output = agent.run("Use nonexistent").await.unwrap();
+        assert_eq!(output.text(), "I see the error");
+    }
+
+    #[tokio::test]
+    async fn test_bad_tool_args_returns_error_message() {
+        // AC-6: If deserialization fails → returns descriptive error to LLM (no crash)
+        let responses = vec![
+            CompletionResponse {
+                content: ResponseContent::ToolCalls(vec![ToolCall {
+                    id: "call_bad_args".into(),
+                    name: "echo".into(),
+                    arguments: serde_json::json!({"wrong_field": 123}),
+                }]),
+                usage: Usage {
+                    prompt_tokens: 10,
+                    completion_tokens: 5,
+                    total_tokens: 15,
+                },
+            },
+            CompletionResponse {
+                content: ResponseContent::Text("Bad args handled".into()),
+                usage: Usage {
+                    prompt_tokens: 20,
+                    completion_tokens: 5,
+                    total_tokens: 25,
+                },
+            },
+        ];
+
+        let agent = Agent::builder()
+            .model(SequenceProvider::with_responses(responses))
+            .system("You are a test bot")
+            .tool(EchoTool)
+            .build()
+            .unwrap();
+
+        let output = agent.run("Bad args").await.unwrap();
+        assert_eq!(output.text(), "Bad args handled");
     }
 }
