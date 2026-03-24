@@ -365,3 +365,85 @@ impl AgentSession<'_> {
         &self.session_id
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_run_usage_default() {
+        let u = RunUsage::default();
+        assert_eq!(u.tokens, 0);
+        assert_eq!(u.iterations, 0);
+        assert_eq!(u.duration, std::time::Duration::ZERO);
+    }
+
+    #[test]
+    fn test_text_output() {
+        let out = AgentOutput::text_with_usage("Hello".into(), RunUsage::default());
+        assert_eq!(out.text(), "Hello");
+        assert!(!out.is_error());
+        assert!(out.structured().is_none());
+        assert!(out.error_message().is_none());
+    }
+
+    #[test]
+    fn test_text_returns_empty_for_structured() {
+        let out = AgentOutput {
+            content: AgentOutputContent::Structured(serde_json::json!({"key": "val"})),
+            usage: RunUsage::default(),
+        };
+        assert_eq!(out.text(), "");
+        assert!(out.structured().is_some());
+        assert_eq!(out.structured().unwrap()["key"], "val");
+    }
+
+    #[test]
+    fn test_text_returns_empty_for_error() {
+        let out = AgentOutput {
+            content: AgentOutputContent::Error("boom".into()),
+            usage: RunUsage::default(),
+        };
+        assert_eq!(out.text(), "");
+        assert!(out.is_error());
+        assert_eq!(out.error_message(), Some("boom"));
+    }
+
+    #[test]
+    fn test_display_text() {
+        let out = AgentOutput::text_with_usage("hi".into(), RunUsage::default());
+        assert_eq!(format!("{out}"), "hi");
+    }
+
+    #[test]
+    fn test_display_structured() {
+        let out = AgentOutput {
+            content: AgentOutputContent::Structured(serde_json::json!(42)),
+            usage: RunUsage::default(),
+        };
+        assert_eq!(format!("{out}"), "42");
+    }
+
+    #[test]
+    fn test_display_error() {
+        let out = AgentOutput {
+            content: AgentOutputContent::Error("fail".into()),
+            usage: RunUsage::default(),
+        };
+        assert_eq!(format!("{out}"), "Error: fail");
+    }
+
+    #[test]
+    fn test_usage_carried_through() {
+        let usage = RunUsage {
+            tokens: 100,
+            iterations: 5,
+            duration: std::time::Duration::from_millis(500),
+        };
+        let out = AgentOutput::text_with_usage("x".into(), usage);
+        assert_eq!(out.usage.tokens, 100);
+        assert_eq!(out.usage.iterations, 5);
+        assert_eq!(out.usage.duration.as_millis(), 500);
+    }
+}
+

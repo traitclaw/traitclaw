@@ -38,3 +38,48 @@ pub enum StreamEvent {
 
 /// A stream of completion events.
 pub type CompletionStream = Pin<Box<dyn Stream<Item = Result<StreamEvent>> + Send>>;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_text_delta() {
+        let e = StreamEvent::TextDelta("chunk".into());
+        assert!(format!("{e:?}").contains("TextDelta"));
+    }
+
+    #[test]
+    fn test_tool_call_start() {
+        let e = StreamEvent::ToolCallStart {
+            id: "call_1".into(),
+            name: "search".into(),
+        };
+        let dbg = format!("{e:?}");
+        assert!(dbg.contains("call_1"));
+        assert!(dbg.contains("search"));
+    }
+
+    #[test]
+    fn test_tool_call_delta() {
+        let e = StreamEvent::ToolCallDelta {
+            id: "call_1".into(),
+            arguments_delta: "{\"q\":".into(),
+        };
+        assert!(format!("{e:?}").contains("ToolCallDelta"));
+    }
+
+    #[test]
+    fn test_done() {
+        let e = StreamEvent::Done;
+        assert!(format!("{e:?}").contains("Done"));
+    }
+
+    #[test]
+    fn test_stream_event_clone() {
+        let e = StreamEvent::TextDelta("abc".into());
+        let c = e.clone();
+        assert!(format!("{c:?}").contains("abc"));
+    }
+}
+

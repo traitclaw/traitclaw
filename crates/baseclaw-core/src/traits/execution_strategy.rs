@@ -362,4 +362,61 @@ mod tests {
         assert_eq!(results.len(), 1);
         assert!(results[0].output.contains("blocked"));
     }
+
+    #[tokio::test]
+    async fn test_guard_panic_defaults_to_deny() {
+        use crate::traits::guard::{Guard, GuardResult};
+
+        struct PanicGuard;
+        impl Guard for PanicGuard {
+            fn name(&self) -> &'static str {
+                "panic_guard"
+            }
+            fn check(&self, _action: &Action) -> GuardResult {
+                panic!("intentional panic in guard");
+            }
+        }
+
+        let strategy = SequentialStrategy;
+        let tools: Vec<Arc<dyn ErasedTool>> = vec![Arc::new(AddTool)];
+        let guards: Vec<Arc<dyn Guard>> = vec![Arc::new(PanicGuard)];
+
+        let state = AgentState::new(crate::types::model_info::ModelTier::Small, 4096);
+
+        let results = strategy
+            .execute_batch(make_calls(1), &tools, &guards, &state)
+            .await;
+
+        assert_eq!(results.len(), 1);
+        // P3: panicking guard should deny, not allow
+        assert!(
+            results[0].output.contains("panicked"),
+            "Expected deny on panic, got: {}",
+            results[0].output
+        );
+    }
+
+    #[tokio::test]
+    async fn test_tool_not_found_returns_error() {
+        let strategy = SequentialStrategy;
+        let tools: Vec<Arc<dyn ErasedTool>> = vec![]; // no tools registered
+        let guards: Vec<Arc<dyn Guard>> = vec![Arc::new(NoopGuard)];
+
+        let state = AgentState::new(crate::types::model_info::ModelTier::Small, 4096);
+
+        let calls = vec![PendingToolCall {
+            id: "c1".into(),
+            name: "nonexistent".into(),
+            arguments: serde_json::json!({}),
+        }];
+
+        let results = strategy.execute_batch(calls, &tools, &guards, &state).await;
+
+        assert_eq!(results.len(), 1);
+        assert!(
+            results[0].output.contains("not found"),
+            "Expected 'not found', got: {}",
+            results[0].output
+        );
+    }
 }
