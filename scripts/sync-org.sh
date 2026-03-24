@@ -6,31 +6,28 @@ set -euo pipefail
 
 ORG_REMOTE="org"
 BRANCH="main"
-EXCLUDE_PATHS=("_bmad-output/")
 
 echo "🔄 Syncing to org repo (excluding private content)..."
 
-# Create a temporary filtered branch
-TEMP_BRANCH="__org_sync_temp__"
-git checkout -b "$TEMP_BRANCH" 2>/dev/null || git checkout "$TEMP_BRANCH"
+# Use a temp index to build filtered tree without switching branches
+export GIT_INDEX_FILE="$(git rev-parse --git-dir)/index.sync-org"
+trap 'rm -f "$GIT_INDEX_FILE"' EXIT
 
-# Remove excluded paths from index only (keep local files)
-for path in "${EXCLUDE_PATHS[@]}"; do
-  if git ls-files --error-unmatch "$path" &>/dev/null; then
-    git rm -r --cached --quiet "$path"
-    echo "  ✂️  Excluded: $path"
-  fi
-done
+# Read current HEAD into temp index
+git read-tree HEAD
 
-# Create filtered commit
-git commit --allow-empty -m "sync: filtered push to org" --quiet
+# Remove excluded paths from temp index
+git rm -r --cached --quiet _bmad-output/ 2>/dev/null || true
 
-# Force push to org
-git push "$ORG_REMOTE" "$TEMP_BRANCH:$BRANCH" --force
-echo "✅ Pushed to $ORG_REMOTE/$BRANCH"
+# Write filtered tree
+TREE=$(git write-tree)
 
-# Switch back and clean up
-git checkout "$BRANCH"
-git branch -D "$TEMP_BRANCH"
+# Create commit
+MSG="sync: mirror from private repo (excludes _bmad-output)"
+COMMIT=$(echo "$MSG" | git commit-tree "$TREE")
 
+# Force push
+git push "$ORG_REMOTE" "$COMMIT:refs/heads/$BRANCH" --force
+
+echo "✅ Pushed to $ORG_REMOTE/$BRANCH (without _bmad-output)"
 echo "🎉 Sync complete!"
