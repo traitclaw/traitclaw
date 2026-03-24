@@ -8,6 +8,7 @@ members = [
     "crates/baseclaw-anthropic",
     "crates/baseclaw-openai",
     "crates/baseclaw-steering",
+    "crates/baseclaw-memory-sqlite",
 ]
 
 [workspace.package]
@@ -47,3 +48,4 @@ baseclaw-openai-compat = { path = "crates/baseclaw-openai-compat", version = "0.
 baseclaw-anthropic = { path = "crates/baseclaw-anthropic", version = "0.1.0" }
 baseclaw-openai = { path = "crates/baseclaw-openai", version = "0.1.0" }
 baseclaw-steering = { path = "crates/baseclaw-steering", version = "0.1.0" }
+baseclaw-memory-sqlite = { path = "crates/baseclaw-memory-sqlite", version = "0.1.0" }

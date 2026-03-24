@@ -356,3 +356,71 @@ fn infer_model_info(model: &str, base_url: &str) -> ModelInfo {
         m.contains("gpt-4o") || m.contains("claude-3-5-sonnet"),
     )
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_infer_gpt4o_large() {
+        let info = infer_model_info("gpt-4o", OPENAI_BASE);
+        assert!(matches!(info.tier, ModelTier::Large));
+        assert_eq!(info.context_window, 128_000);
+        assert!(info.supports_structured);
+    }
+
+    #[test]
+    fn test_infer_gpt4o_mini_small() {
+        let info = infer_model_info("gpt-4o-mini", OPENAI_BASE);
+        assert!(matches!(info.tier, ModelTier::Small));
+        assert!(info.supports_structured);
+    }
+
+    #[test]
+    fn test_infer_llama_medium() {
+        let info = infer_model_info("llama3.2", "http://localhost:11434/v1");
+        assert!(matches!(info.tier, ModelTier::Medium));
+        assert_eq!(info.context_window, 8_192);
+    }
+
+    #[test]
+    fn test_infer_70b_large() {
+        let info = infer_model_info("llama-3.3-70b-versatile", GROQ_BASE);
+        assert!(matches!(info.tier, ModelTier::Large));
+    }
+
+    #[test]
+    fn test_openai_constructor() {
+        let p = OpenAiCompatProvider::openai("gpt-4o", "sk-test");
+        assert_eq!(p.config.base_url, OPENAI_BASE);
+        assert_eq!(p.config.api_key, "sk-test");
+        assert_eq!(p.config.model, "gpt-4o");
+    }
+
+    #[test]
+    fn test_ollama_constructor_no_auth() {
+        let p = OpenAiCompatProvider::ollama("llama3.2");
+        assert_eq!(p.config.base_url, OLLAMA_BASE);
+        assert!(p.config.api_key.is_empty());
+    }
+
+    #[test]
+    fn test_groq_constructor() {
+        let p = OpenAiCompatProvider::groq("mixtral-8x7b", "gsk-test");
+        assert_eq!(p.config.base_url, GROQ_BASE);
+        assert_eq!(p.config.api_key, "gsk-test");
+    }
+
+    #[test]
+    fn test_chat_url() {
+        let p = OpenAiCompatProvider::openai("gpt-4o", "key");
+        assert_eq!(p.chat_url(), "https://api.openai.com/v1/chat/completions");
+    }
+
+    #[test]
+    fn test_model_info_returns_ref() {
+        let p = OpenAiCompatProvider::openai("gpt-4o", "key");
+        let info = p.model_info();
+        assert_eq!(info.name, "gpt-4o");
+    }
+}

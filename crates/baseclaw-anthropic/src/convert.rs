@@ -146,3 +146,131 @@ pub(crate) fn from_wire(wire: MessagesResponse) -> CompletionResponse {
 
     CompletionResponse { content, usage }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use baseclaw_core::types::message::Message;
+
+    fn make_request() -> CompletionRequest {
+        baseclaw_core::types::completion::CompletionRequest {
+            model: "claude-3-5-sonnet-20241022".into(),
+            messages: vec![Message::system("You are helpful"), Message::user("Hello")],
+            tools: vec![],
+            max_tokens: Some(2000),
+            temperature: Some(0.5),
+            response_format: None,
+            stream: false,
+        }
+    }
+
+    #[test]
+    fn test_system_extracted_to_top_level() {
+        let wire = to_wire(make_request());
+        assert_eq!(wire.system, Some("You are helpful".into()));
+        // System message should NOT appear in messages array
+        assert_eq!(wire.messages.len(), 1);
+        assert_eq!(wire.messages[0].role, "user");
+    }
+
+    #[test]
+    fn test_multiple_system_messages_concatenated() {
+        let mut req = make_request();
+        req.messages.insert(1, Message::system("Be concise"));
+        let wire = to_wire(req);
+        assert_eq!(wire.system, Some("You are helpful\nBe concise".into()));
+    }
+
+    #[test]
+    fn test_max_tokens_defaults_to_4096() {
+        let mut req = make_request();
+        req.max_tokens = None;
+        let wire = to_wire(req);
+        assert_eq!(wire.max_tokens, 4096);
+    }
+
+    #[test]
+    fn test_tool_role_becomes_user_tool_result() {
+        let mut req = make_request();
+        req.messages.push(Message {
+            role: MessageRole::Tool,
+            content: "result data".into(),
+            tool_call_id: Some("call_1".into()),
+        });
+        let wire = to_wire(req);
+        // Tool message becomes user with tool_result block
+        let last = wire.messages.last().unwrap();
+        assert_eq!(last.role, "user");
+    }
+
+    #[test]
+    fn test_tool_schemas_mapped() {
+        let mut req = make_request();
+        req.tools.push(ToolSchema {
+            name: "search".into(),
+            description: "Search the web".into(),
+            parameters: serde_json::json!({ "type": "object", "$schema": "http://...", "title": "Search" }),
+        });
+        let wire = to_wire(req);
+        assert_eq!(wire.tools.len(), 1);
+        assert_eq!(wire.tools[0].name, "search");
+        // $schema and title should be stripped
+        assert!(!wire.tools[0]
+            .input_schema
+            .as_object()
+            .unwrap()
+            .contains_key("$schema"));
+        assert!(!wire.tools[0]
+            .input_schema
+            .as_object()
+            .unwrap()
+            .contains_key("title"));
+    }
+
+    #[test]
+    fn test_from_wire_text_response() {
+        let wire = MessagesResponse {
+            content: vec![ResponseContentBlock::Text {
+                text: "Hello!".into(),
+            }],
+            stop_reason: Some("end_turn".into()),
+            usage: crate::wire::AnthropicUsage {
+                input_tokens: 10,
+                output_tokens: 5,
+            },
+        };
+        let resp = from_wire(wire);
+        match resp.content {
+            ResponseContent::Text(t) => assert_eq!(t, "Hello!"),
+            ResponseContent::ToolCalls(_) => panic!("expected text"),
+        }
+        assert_eq!(resp.usage.prompt_tokens, 10);
+        assert_eq!(resp.usage.completion_tokens, 5);
+        assert_eq!(resp.usage.total_tokens, 15);
+    }
+
+    #[test]
+    fn test_from_wire_tool_use() {
+        let wire = MessagesResponse {
+            content: vec![ResponseContentBlock::ToolUse {
+                id: "toolu_1".into(),
+                name: "search".into(),
+                input: serde_json::json!({"q": "rust"}),
+            }],
+            stop_reason: Some("tool_use".into()),
+            usage: crate::wire::AnthropicUsage {
+                input_tokens: 20,
+                output_tokens: 10,
+            },
+        };
+        let resp = from_wire(wire);
+        match resp.content {
+            ResponseContent::ToolCalls(calls) => {
+                assert_eq!(calls.len(), 1);
+                assert_eq!(calls[0].name, "search");
+                assert_eq!(calls[0].id, "toolu_1");
+            }
+            ResponseContent::Text(_) => panic!("expected tool calls"),
+        }
+    }
+}

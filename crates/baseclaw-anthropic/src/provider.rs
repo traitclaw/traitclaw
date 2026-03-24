@@ -274,3 +274,55 @@ fn infer_model_info(model: &str) -> ModelInfo {
         m.contains("claude-3-5-sonnet"),
     )
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_opus_large_tier() {
+        let info = infer_model_info("claude-3-opus-20240229");
+        assert!(matches!(info.tier, ModelTier::Large));
+        assert_eq!(info.context_window, 200_000);
+    }
+
+    #[test]
+    fn test_sonnet_large_tier() {
+        let info = infer_model_info("claude-3-5-sonnet-20241022");
+        assert!(matches!(info.tier, ModelTier::Large));
+        assert!(info.supports_structured);
+    }
+
+    #[test]
+    fn test_haiku_small_tier() {
+        let info = infer_model_info("claude-3-5-haiku-20241022");
+        assert!(matches!(info.tier, ModelTier::Small));
+    }
+
+    #[test]
+    fn test_unknown_model_medium() {
+        let info = infer_model_info("claude-3-something");
+        assert!(matches!(info.tier, ModelTier::Medium));
+    }
+
+    #[test]
+    fn test_provider_construction() {
+        let p = AnthropicProvider::new("claude-3-5-sonnet-20241022", "sk-ant-test");
+        assert_eq!(p.api_key, "sk-ant-test");
+        assert_eq!(p.model, "claude-3-5-sonnet-20241022");
+    }
+
+    #[test]
+    fn test_model_info_returns_ref() {
+        let p = AnthropicProvider::new("claude-3-opus-20240229", "key");
+        let info = p.model_info();
+        assert_eq!(info.name, "claude-3-opus-20240229");
+        assert!(matches!(info.tier, ModelTier::Large));
+    }
+
+    #[test]
+    fn test_messages_url() {
+        let url = AnthropicProvider::messages_url();
+        assert_eq!(url, "https://api.anthropic.com/v1/messages");
+    }
+}
