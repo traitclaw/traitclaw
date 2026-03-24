@@ -105,31 +105,75 @@ use traitclaw_mcp::McpServer;
 let server = McpServer::stdio("npx", &["-y", "@mcp/server-filesystem", "."]).await?;
 ```
 
-## Crate Architecture
+## 🏗️ Core Architecture & Model
 
-```
-traitclaw                    ← Meta-crate (start here)
-├── traitclaw-core           ← Agent, Provider, Tool, Memory traits + runtime
-├── traitclaw-macros          ← #[derive(Tool)] proc macro
-├── traitclaw-openai-compat   ← OpenAI/Ollama/Groq/vLLM provider
-├── traitclaw-openai          ← Native OpenAI provider
-├── traitclaw-anthropic       ← Claude provider
-├── traitclaw-steering        ← Guards, Hints, Trackers
-├── traitclaw-memory-sqlite   ← SQLite persistent memory
-├── traitclaw-mcp             ← MCP client (Model Context Protocol)
-├── traitclaw-rag             ← RAG pipeline with BM25 retrieval
-├── traitclaw-team            ← Multi-agent orchestration
-└── traitclaw-eval            ← Evaluation & benchmarking
+TraitClaw is built entirely on Rust **traits**. There is no vendor lock-in, no hidden runtimes, and no bloated abstractions. Everything is swappable.
+
+* **`Agent`**: The orchestrator. It manages the conversation loop, error handling, tool resolution, and streaming.
+* **`Provider`**: The LLM backend interface (`impl Provider`). Whether it's OpenAI, Anthropic, or an open-source local model, they all conform to this trait.
+* **`Memory`**: The conversation persistence layer (`impl Memory`). It dictates how and where dialogue history is stored.
+* **`Tool`**: The functional capability (`impl Tool`). Tools define their schema and execution logic.
+
+Because it relies on dynamic dispatch where flexibility is needed (e.g., `Box<dyn Tool>`) and static typing everywhere else, TraitClaw achieves zero-cost abstractions for the core loop.
+
+## 🚀 Extensibility
+
+Extending TraitClaw is as simple as implementing a trait.
+
+### Custom Providers
+Want to support a proprietary enterprise LLM or `llama.cpp`? Implement the `Provider` trait.
+```rust
+#[async_trait]
+impl Provider for MyCustomProvider {
+    async fn generate(&self, messages: &[Message], config: &AgentConfig) -> Result<AgentOutput> { /* ... */ }
+    async fn stream(&self, messages: &[Message], config: &AgentConfig) -> Result<BoxStream<'static, Result<StreamEvent>>> { /* ... */ }
+}
 ```
 
-## Feature Flags
+### Custom Memory
+Need to scale beyond SQLite? Implement the `Memory` trait for Redis, PostgreSQL, or DynamoDB.
+```rust
+#[async_trait]
+impl Memory for RedisMemory {
+    async fn get_messages(&self, session_id: &str) -> Result<Vec<Message>> { /* ... */ }
+    async fn add_message(&self, session_id: &str, message: Message) -> Result<()> { /* ... */ }
+}
+```
+
+### Dynamic Tools
+While `#[derive(Tool)]` is great for simple functions, you can manually implement `Tool` to build dynamic schemas (e.g., querying a database schema at runtime to build the tool signature).
+
+---
+
+## 📦 Crates Ecosystem & Status
+
+TraitClaw is modular. You only pay for what you compile. Some crates are currently in the process of being published to **crates.io** (subject to rate-limiting).
+
+| Crate | Purpose | crates.io Status |
+|---|---|---|
+| **`traitclaw`** | **Meta-crate (Start Here)** | ⏳ Pending _(Rate limited)_ |
+| `traitclaw-core` | Core traits, `Agent` runtime, `Tool`, `Memory` | ✅ `v0.1.0` |
+| `traitclaw-macros` | `#[derive(Tool)]` proc macro | ✅ `v0.1.0` |
+| `traitclaw-openai-compat`| OpenAI, Ollama, Groq, vLLM Provider | ✅ `v0.1.0` |
+| `traitclaw-openai` | Native OpenAI Provider | ⏳ Pending _(Rate limited)_ |
+| `traitclaw-anthropic` | Claude Provider | ✅ `v0.1.0` |
+| `traitclaw-steering` | Guards, Hints, Trackers | ⏳ Pending _(Rate limited)_ |
+| `traitclaw-memory-sqlite`| SQLite persistent memory | ✅ `v0.1.0` |
+| `traitclaw-mcp` | MCP client (Model Context Protocol) | ⏳ Pending _(Rate limited)_ |
+| `traitclaw-rag` | Basic RAG pipeline with BM25 | ⏳ Pending _(Rate limited)_ |
+| `traitclaw-team` | Multi-agent orchestration | ⏳ Pending _(Rate limited)_ |
+| `traitclaw-eval` | Evaluation & benchmarking suite | ⏳ Pending _(Rate limited)_ |
+
+## ⚙️ Feature Flags
+
+When using the `traitclaw` meta-package, you can opt-in to features:
 
 ```toml
 [dependencies]
 traitclaw = { version = "0.1", features = ["full"] }
 ```
 
-| Feature | Crate | Default |
+| Feature | Enables Crate | Default |
 |---------|-------|:-------:|
 | `openai-compat` | `traitclaw-openai-compat` | ✅ |
 | `macros` | `traitclaw-macros` | ✅ |
