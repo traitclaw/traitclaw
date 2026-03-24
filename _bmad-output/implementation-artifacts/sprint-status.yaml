@@ -1,0 +1,87 @@
+# generated: 2026-03-24T00:47:00+07:00
+# last_updated: 2026-03-25T04:39:00+07:00
+# project: traitclaw
+# project_key: NOKEY
+# tracking_system: file-system
+# story_location: "{project-root}/_bmad-output/implementation-artifacts"
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created in stories folder
+#   - in-progress: Developer actively working on implementation
+#   - review: Ready for code review
+#   - done: Story completed
+
+generated: 2026-03-24T00:47:00+07:00
+last_updated: 2026-03-25T04:39:00+07:00
+project: traitclaw
+project_key: NOKEY
+tracking_system: file-system
+story_location: "{project-root}/_bmad-output/implementation-artifacts"
+
+development_status:
+  # === Epic 1: Core Foundation ===
+  epic-1: done
+  1-1-workspace-and-crate-scaffolding: done
+  1-2-core-types-and-message-system: done
+  1-3-provider-trait: done
+  1-4-agent-builder-and-config: done
+  1-5-in-memory-memory-and-memory-trait: done
+  1-6-agent-runtime-loop: done
+  1-7-error-types-and-result-alias: done
+  1-8-streaming-support: done
+  1-9-prelude-and-meta-crate-re-exports: done
+  1-10-session-management: done
+  1-11-context-window-management: done
+  1-12-tool-execution-strategy: done
+  1-13-tool-output-processing: done
+  1-14-provider-retry-with-backoff: done
+
+  # === Epic 2: Tool System ===
+  epic-2: done
+  2-1-tool-trait-and-erasedtool: done
+  2-2-derive-tool-macro: done
+  2-3-tool-integration-in-runtime: done
+
+  # === Epic 3: Steering & Structured Output ===
+  epic-3: done
+  3-1-guard-hint-track-trait-integration: done
+  3-2-built-in-steering-implementations: done
+  3-3-structured-output: done
+  3-4-steering-auto-facade: done
+
+  # === Epic 4: Providers & Persistence ===
+  epic-4: done
+  4-1-openai-compatible-provider: done
+  4-2-native-openai-provider: done
+  4-3-anthropic-provider: done
+  4-4-sqlite-memory-backend: done
+
+  # === Epic 5: Advanced Features ===
+  epic-5: done
+  5-1-mcp-client-support: done
+  5-2-rag-pipeline: done
+  5-3-multi-agent-orchestration: done
+  5-4-evaluation-framework: done
+
+  # === Epic 6: Examples ===
+  epic-6: done
+  6-1-hello-agent-example: done
+  6-2-tool-calling-example: done
+  6-3-streaming-example: done
+  6-4-steering-example: done
+  6-5-miniclaw-showcase: done
+
+  # === Epic 7: Production Hardening ===
+  epic-7: done
+  7-1-agentoutput-enrichment: done
+  7-2-meta-crate-feature-flags: done
+  7-3-observability-tracing-spans: done
+  7-4-error-recovery-and-graceful-degradation: done
