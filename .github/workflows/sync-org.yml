@@ -12,6 +12,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Remove private content
         run: |
@@ -28,6 +29,8 @@ jobs:
           git update-ref refs/heads/filtered "$COMMIT"
 
       - name: Push to org repo
+        env:
+          ORG_TOKEN: ${{ secrets.ORG_SYNC_TOKEN }}
         run: |
-          git remote add org https://x-access-token:${{ secrets.ORG_SYNC_TOKEN }}@github.com/traitclaw/traitclaw.git
+          git remote add org https://x-access-token:${ORG_TOKEN}@github.com/traitclaw/traitclaw.git
           git push org filtered:main --force
