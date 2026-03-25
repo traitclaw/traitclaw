@@ -212,9 +212,12 @@ traitclaw = { version = "0.1", features = ["full"] }
 cd examples/01-hello-agent && cargo run
 ```
 
-## 🌟 Roadmap v0.2.0
+## 🌟 Roadmap v0.2.0 (The Openness Update)
 
 * **`AgentStrategy` Trait**: Extract the core Agent loop into a Strategy pattern (e.g., `DefaultStrategy`, `MctsStrategy`, `ReActStrategy`) to allow developers to build advanced reasoning architectures while keeping the default experience simple.
+* **`AgentHook` Lifecycle System**: Introduce an observability and interception middleware (`on_provider_start`, `before_tool_execute`, `on_stream_chunk`) for Enterprise integrations (DataDog, OpenTelemetry, etc.).
+* **`TeamRouter` (Graph Orchestration)**: Expand `traitclaw-team` with customizable routing logic (State Machine / Graph) for complex, non-linear multi-agent workflows.
+* **Extensive Examples**: Provide dedicated showrooms in `examples/` demonstrating how to build custom Strategies, apply Lifecycle Hooks, and orchestrate advanced Teams.
 
 ## License
 
