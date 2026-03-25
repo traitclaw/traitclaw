@@ -212,6 +212,10 @@ traitclaw = { version = "0.1", features = ["full"] }
 cd examples/01-hello-agent && cargo run
 ```
 
+## 🌟 Roadmap v0.2.0
+
+* **`AgentStrategy` Trait**: Extract the core Agent loop into a Strategy pattern (e.g., `DefaultStrategy`, `MctsStrategy`, `ReActStrategy`) to allow developers to build advanced reasoning architectures while keeping the default experience simple.
+
 ## License
 
 Licensed under either of [Apache License, Version 2.0](LICENSE-APACHE) or [MIT License](LICENSE-MIT) at your option.
