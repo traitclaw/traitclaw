@@ -35,6 +35,7 @@ pub mod types;
 pub mod agent;
 pub mod agent_builder;
 pub mod config;
+pub mod context_managers;
 pub mod default_strategy;
 pub mod error;
 pub mod memory;
@@ -66,6 +67,7 @@ pub use traits::output_processor::{
 pub use traits::output_transformer::OutputTransformer;
 pub use traits::provider::Provider;
 
+pub use context_managers::{LlmCompressor, RuleBasedCompressor, TieredCompressor};
 pub use registries::DynamicRegistry;
 pub use retry::{RetryConfig, RetryProvider};
 pub use token_counting::{CharApproxCounter, TokenCounter};
@@ -127,6 +129,9 @@ pub mod prelude {
     pub use crate::traits::tool::{ErasedTool, Tool, ToolSchema};
     pub use crate::traits::tool_registry::{SimpleRegistry, ToolRegistry};
     pub use crate::traits::tracker::Tracker;
+
+    // v0.3.0: Built-in context managers
+    pub use crate::context_managers::{LlmCompressor, RuleBasedCompressor, TieredCompressor};
 
     pub use crate::types::action::Action;
     pub use crate::types::agent_state::AgentState;

@@ -20,7 +20,7 @@
 #   - done: Story completed
 
 generated: 2026-03-24T00:47:00+07:00
-last_updated: 2026-03-25T04:39:00+07:00
+last_updated: 2026-03-25T17:55:00+07:00
 project: traitclaw
 project_key: NOKEY
 tracking_system: file-system
@@ -85,3 +85,37 @@ development_status:
   7-2-meta-crate-feature-flags: done
   7-3-observability-tracing-spans: done
   7-4-error-recovery-and-graceful-degradation: done
+
+  # ==========================================================================
+  # v0.3.0 — Context Window Rescue
+  # ==========================================================================
+
+  # === Epic 8: Smart Context Survival ===
+  epic-8: done
+  8-1-contextmanager-trait-definition: done
+  8-2-contextmanager-integration-into-agent: done
+  8-3-token-counting-infrastructure: done
+  8-4-built-in-context-managers: review
+
+  # === Epic 9: Intelligent Tool Output Processing ===
+  epic-9: done
+  9-1-outputtransformer-trait-definition: done
+  9-2-outputtransformer-integration-into-agent: done
+  9-3-built-in-output-transformers: done
+
+  # === Epic 10: Dynamic Tool Management ===
+  epic-10: done
+  10-1-toolregistry-trait-definition: done
+  10-2-toolregistry-integration-into-agent: done
+  10-3-built-in-tool-registries: done
+
+  # === Epic 11: Production-Ready Context Window ===
+  epic-11: done
+  11-1-defaultstrategy-full-integration: done
+
+  # === Epic 12: Zero-Friction Upgrade ===
+  epic-12: done
+  12-1-migration-guide: done
+  12-2-context-manager-example: done
+  12-3-output-transformer-example: done
+  12-4-tool-registry-example: done
