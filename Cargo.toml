@@ -30,6 +30,7 @@ members = [
     "examples/15-context-manager",
     "examples/16-output-transformer",
     "examples/17-dynamic-tools",
+    "examples/18-context-managers",
     "showcase/miniclaw",
 ]
 
