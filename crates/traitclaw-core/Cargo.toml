@@ -16,6 +16,11 @@ thiserror = { workspace = true }
 tracing = { workspace = true }
 schemars = { workspace = true }
 uuid = { workspace = true }
+# Optional: accurate token counting via tiktoken
+tiktoken-rs = { version = "0.6", optional = true }
+
+[features]
+tiktoken = ["dep:tiktoken-rs"]
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["test-util", "macros"] }

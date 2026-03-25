@@ -23,9 +23,16 @@
 #![warn(clippy::pedantic)]
 #![allow(clippy::module_name_repetitions)]
 
+pub mod conditional_router;
+pub mod execution;
 pub mod router;
+pub mod team_context;
 
 use serde::{Deserialize, Serialize};
+
+pub use conditional_router::ConditionalRouter;
+pub use execution::{run_verification_chain, TeamRunner};
+pub use team_context::TeamContext;
 
 /// A team of agents working together.
 pub struct Team {

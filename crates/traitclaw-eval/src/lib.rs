@@ -28,6 +28,14 @@
 #![allow(clippy::cast_precision_loss)] // usize→f64 for scoring is acceptable
 #![allow(clippy::doc_markdown)]
 
+pub mod export;
+pub mod metrics;
+pub mod runner;
+
+pub use export::EvalReportExport;
+pub use metrics::{JudgeProvider, LlmJudgeMetric, SchemaValidationMetric, ToolUsageMetric};
+pub use runner::{AsyncMetric, EvalAgent, EvalRunner, SyncMetricAdapter};
+
 use serde::{Deserialize, Serialize};
 
 /// A suite of evaluation test cases.
@@ -107,7 +115,7 @@ impl TestCase {
 }
 
 /// A single test case result.
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TestResult {
     /// Test case ID.
     pub case_id: String,
@@ -120,7 +128,7 @@ pub struct TestResult {
 }
 
 /// An evaluation report.
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EvalReport {
     /// Suite name.
     pub suite_name: String,

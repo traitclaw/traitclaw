@@ -30,6 +30,7 @@ use traitclaw_core::types::stream::StreamEvent;
 use traitclaw_core::{Error, Result};
 
 use crate::convert::{from_wire, to_wire};
+use crate::retry::RetryPolicy;
 use crate::wire::{ChatResponse, StreamChunk};
 
 // Known base URLs
@@ -57,6 +58,8 @@ pub struct OpenAiCompatProvider {
     config: OpenAiCompatConfig,
     client: reqwest::Client,
     model_info: ModelInfo,
+    /// Optional retry policy for transient errors (429, 5xx).
+    retry_policy: Option<RetryPolicy>,
 }
 
 impl OpenAiCompatProvider {
@@ -117,7 +120,28 @@ impl OpenAiCompatProvider {
             config,
             client,
             model_info,
+            retry_policy: None,
         }
+    }
+
+    /// Attach a [`RetryPolicy`] to this provider.
+    ///
+    /// When set, `complete()` will automatically retry on HTTP 429 / 5xx responses
+    /// using exponential backoff as configured by the policy.
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// use traitclaw_openai_compat::{OpenAiCompatProvider, RetryPolicy};
+    /// use std::time::Duration;
+    ///
+    /// let provider = OpenAiCompatProvider::openai("gpt-4o-mini", "sk-...")
+    ///     .with_retry(RetryPolicy::exponential(3, Duration::from_millis(500)));
+    /// ```
+    #[must_use]
+    pub fn with_retry(mut self, policy: RetryPolicy) -> Self {
+        self.retry_policy = Some(policy);
+        self
     }
 
     fn chat_url(&self) -> String {
@@ -139,26 +163,68 @@ impl Provider for OpenAiCompatProvider {
         let wire = to_wire(request);
         tracing::debug!(model = wire.model.as_str(), "Sending completion request");
 
-        let builder = self.client.post(self.chat_url()).json(&wire);
-        let builder = self.add_auth(builder);
+        let max_attempts = self.retry_policy.as_ref().map_or(1, |p| p.max_retries + 1);
 
-        let http_resp = builder
-            .send()
-            .await
-            .map_err(|e| Error::provider(format!("HTTP error: {e}")))?;
+        let mut last_err = None;
 
-        let status = http_resp.status();
-        if !status.is_success() {
-            let body = http_resp.text().await.unwrap_or_default();
-            return Err(Error::provider(format!("API error {status}: {body}")));
+        for attempt in 0..max_attempts {
+            // Sleep before retry (not before the first attempt)
+            if attempt > 0 {
+                if let Some(policy) = &self.retry_policy {
+                    // delay_for is 0-indexed: attempt 1 → delay_for(0), attempt 2 → delay_for(1), etc.
+                    let delay = policy.delay_for(attempt - 1);
+                    tracing::debug!(
+                        attempt,
+                        delay_ms = delay.as_millis(),
+                        "Retrying after transient error"
+                    );
+                    tokio::time::sleep(delay).await;
+                }
+            }
+
+            let builder = self.client.post(self.chat_url()).json(&wire);
+            let builder = self.add_auth(builder);
+
+            let http_resp = match builder.send().await {
+                Ok(r) => r,
+                Err(e) => {
+                    last_err = Some(Error::provider(format!("HTTP error: {e}")));
+                    continue;
+                }
+            };
+
+            let status = http_resp.status();
+
+            if !status.is_success() {
+                let status_code = status.as_u16();
+                // Retry on transient errors if policy configured and not the last attempt
+                if self.retry_policy.is_some()
+                    && RetryPolicy::is_retryable(status_code)
+                    && attempt + 1 < max_attempts
+                {
+                    let body = http_resp.text().await.unwrap_or_default();
+                    tracing::warn!(
+                        status = status_code,
+                        attempt,
+                        "Retryable error \u{2014} will retry"
+                    );
+                    last_err = Some(Error::provider(format!("API error {status_code}: {body}")));
+                    continue;
+                }
+                let body = http_resp.text().await.unwrap_or_default();
+                return Err(Error::provider(format!("API error {status}: {body}")));
+            }
+
+            let chat_resp: ChatResponse = http_resp
+                .json()
+                .await
+                .map_err(|e| Error::provider(format!("Parse error: {e}")))?;
+
+            return from_wire(chat_resp);
         }
 
-        let chat_resp: ChatResponse = http_resp
-            .json()
-            .await
-            .map_err(|e| Error::provider(format!("Parse error: {e}")))?;
-
-        from_wire(chat_resp)
+        // All attempts exhausted
+        Err(last_err.unwrap_or_else(|| Error::provider("All retry attempts exhausted")))
     }
 
     async fn stream(

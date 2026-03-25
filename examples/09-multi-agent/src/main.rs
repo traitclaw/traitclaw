@@ -3,6 +3,11 @@
 //! Demonstrates using `Team`, `AgentRole`, and `VerificationChain`
 //! to compose multiple agents with specialized roles, and set up
 //! generate-then-verify workflows.
+//!
+//! > **⚠️ Superseded by v0.5.0:** See `examples/22-multi-agent-team` for
+//! > the updated version featuring `TeamRunner`, `run_verification_chain`,
+//! > `ConditionalRouter`, and `TeamContext`. This example uses the v0.4
+//! > API and is kept for backward reference only.
 
 use traitclaw_team::{AgentRole, Team, VerificationChain, VerifyResult};
 

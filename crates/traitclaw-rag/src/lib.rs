@@ -28,8 +28,18 @@
 #![warn(clippy::pedantic)]
 #![allow(clippy::module_name_repetitions)]
 
+pub mod chunker;
+pub mod embedding;
+pub mod hybrid;
+pub mod rag_context;
+
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
+
+pub use chunker::{Chunker, FixedSizeChunker, RecursiveChunker, SentenceChunker};
+pub use embedding::{EmbeddingProvider, EmbeddingRetriever};
+pub use hybrid::{CitationStrategy, ContextWindowStrategy, HybridRetriever};
+pub use rag_context::RagContextManager;
 
 /// A document for retrieval.
 #[derive(Debug, Clone, Serialize, Deserialize)]

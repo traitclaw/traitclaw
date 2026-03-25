@@ -21,7 +21,7 @@ use traitclaw_core::types::completion::{CompletionRequest, CompletionResponse};
 use traitclaw_core::types::stream::StreamEvent;
 use traitclaw_core::{Error, Result};
 
-use crate::convert::{from_wire, to_wire};
+use crate::convert::{from_wire, to_wire, to_wire_with_thinking};
 use crate::wire::{
     MessagesResponse, StreamContentBlock, StreamDelta, StreamEvent as AnthropicEvent,
     ANTHROPIC_BASE, ANTHROPIC_VERSION,
@@ -34,6 +34,8 @@ pub struct AnthropicProvider {
     model: String,
     client: reqwest::Client,
     model_info: ModelInfo,
+    /// Extended thinking budget in tokens. `None` = disabled.
+    extended_thinking_budget: Option<u32>,
 }
 
 impl AnthropicProvider {
@@ -57,7 +59,50 @@ impl AnthropicProvider {
             model,
             client,
             model_info,
+            extended_thinking_budget: None,
         }
+    }
+
+    /// Enable extended thinking (chain-of-thought reasoning) for Claude 3.7+.
+    ///
+    /// - `enabled: true` activates thinking with a default 10,000 token budget.
+    /// - `enabled: false` disables thinking (default).
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// use traitclaw_anthropic::AnthropicProvider;
+    ///
+    /// let provider = AnthropicProvider::new("claude-3-7-sonnet-20250219", "key")
+    ///     .with_extended_thinking(true);
+    /// ```
+    #[must_use]
+    pub fn with_extended_thinking(mut self, enabled: bool) -> Self {
+        self.extended_thinking_budget = if enabled { Some(10_000) } else { None };
+        self
+    }
+
+    /// Set a custom token budget for extended thinking.
+    ///
+    /// Anthropic requires a minimum budget of 1,024 tokens.
+    /// Recommended minimum is 5,000 tokens for meaningful reasoning.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `budget_tokens` is less than 1,024 (Anthropic API minimum).
+    #[must_use]
+    pub fn with_thinking_budget(mut self, budget_tokens: u32) -> Self {
+        assert!(
+            budget_tokens >= 1_024,
+            "Anthropic extended thinking requires a minimum budget of 1,024 tokens (got {budget_tokens}). \
+             Consider using at least 5,000 for meaningful reasoning."
+        );
+        assert!(
+            budget_tokens <= 32_000,
+            "Anthropic extended thinking budget cannot exceed 32,000 tokens (got {budget_tokens})."
+        );
+        self.extended_thinking_budget = Some(budget_tokens);
+        self
     }
 
     fn messages_url() -> String {
@@ -75,7 +120,11 @@ impl AnthropicProvider {
 #[async_trait]
 impl Provider for AnthropicProvider {
     async fn complete(&self, request: CompletionRequest) -> Result<CompletionResponse> {
-        let wire = to_wire(request);
+        let wire = if let Some(budget) = self.extended_thinking_budget {
+            to_wire_with_thinking(request, budget)
+        } else {
+            to_wire(request)
+        };
         tracing::debug!(
             model = wire.model.as_str(),
             "Sending Anthropic completion request"

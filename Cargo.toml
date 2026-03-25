@@ -31,6 +31,11 @@ members = [
     "examples/16-output-transformer",
     "examples/17-dynamic-tools",
     "examples/18-context-managers",
+    "examples/19-grouped-registry",
+    "examples/20-mcp-tool-registry",
+    "examples/21-rag-pipeline",
+    "examples/22-multi-agent-team",
+    "examples/23-eval-runner",
     "showcase/miniclaw",
 ]
 
@@ -52,6 +57,7 @@ async-trait = "0.1"
 thiserror = "2"
 tracing = "0.1"
 uuid = { version = "1", features = ["v4"] }
+regex = "1"
 
 # Schema
 schemars = "0.8"

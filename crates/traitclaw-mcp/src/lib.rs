@@ -21,14 +21,20 @@
 #![warn(clippy::pedantic)]
 #![allow(clippy::module_name_repetitions)]
 
+mod multi_server;
 mod protocol;
+mod registry;
 mod server;
 mod tool;
 
+pub use multi_server::{MultiServerMcpRegistry, MultiServerMcpRegistryBuilder};
+pub use registry::McpToolRegistry;
 pub use server::McpServer;
 pub use tool::McpTool;
 
 /// Prelude re-exports for convenient use.
 pub mod prelude {
-    pub use super::{McpServer, McpTool};
+    pub use super::{
+        McpServer, McpTool, McpToolRegistry, MultiServerMcpRegistry, MultiServerMcpRegistryBuilder,
+    };
 }

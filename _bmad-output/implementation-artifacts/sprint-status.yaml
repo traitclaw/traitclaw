@@ -119,3 +119,71 @@ development_status:
   12-2-context-manager-example: done
   12-3-output-transformer-example: done
   12-4-tool-registry-example: done
+
+  # ==========================================================================
+  # v0.4.0 — Power Tools
+  # ==========================================================================
+
+  # === Epic 13: Advanced Tool Registries ===
+  epic-13: backlog
+  13-1-grouped-registry: done
+  13-2-adaptive-registry: done
+
+  # === Epic 14: Progressive Output Processing ===
+  epic-14: backlog
+  14-1-progressive-transformer: done
+  14-2-tiktoken-counter: done
+
+  # === Epic 15: MCP Tool Discovery ===
+  epic-15: backlog
+  15-1-mcp-tool-registry-core: done
+  15-2-mcp-tool-registry-resilience: done
+
+  # === Epic 16: Documentation & Examples ===
+  epic-16: backlog
+  16-1-migration-guide-v03-v04: done
+  16-2-grouped-registry-example: done
+  16-3-mcp-tool-registry-example: done
+
+  # ==========================================================================
+  # v0.5.0 — Ecosystem
+  # ==========================================================================
+
+  # === Epic 17: RAG Foundation ===
+  epic-17: backlog
+  17-1-embedding-provider-chunking: done
+  17-2-embedding-retriever: done
+
+  # === Epic 18: RAG Integration ===
+  epic-18: backlog
+  18-1-hybrid-retriever-grounding: done
+  18-2-rag-context-manager: done
+
+  # === Epic 19: Multi-Agent Execution ===
+  epic-19: done
+  19-1-team-execution-engine: done
+  19-2-verification-chain-conditional-router: done
+  19-3-shared-team-context: done
+
+  # === Epic 20: Eval Runner ===
+  epic-20: done
+  20-1-async-metric-eval-runner: done
+  20-2-llm-judge-specialized-metrics: done
+  20-3-report-export: done
+
+  # === Epic 21: Provider Modernization ===
+  epic-21: done
+  21-1-retry-policy-backoff: done
+  21-2-anthropic-extended-thinking: done
+  21-3-new-provider-constructors: done
+
+  # === Epic 22: Steering Enhancements ===
+  epic-22: done
+  22-1-ratelimit-contentfilter-guards: done
+
+  # === Epic 23: Documentation & Examples ===
+  epic-23: done
+  23-1-migration-guide: done
+  23-2-rag-pipeline-example: done
+  23-3-multi-agent-team-example: done
+  23-4-eval-runner-example: done

@@ -43,6 +43,7 @@ pub mod registries;
 pub mod retry;
 pub(crate) mod runtime;
 pub(crate) mod streaming;
+pub mod token_counter;
 pub mod token_counting;
 pub mod transformers;
 
@@ -68,13 +69,18 @@ pub use traits::output_transformer::OutputTransformer;
 pub use traits::provider::Provider;
 
 pub use context_managers::{LlmCompressor, RuleBasedCompressor, TieredCompressor};
-pub use registries::DynamicRegistry;
+pub use registries::{AdaptiveRegistry, DynamicRegistry, GroupedRegistry, TierLimits};
 pub use retry::{RetryConfig, RetryProvider};
+#[cfg(feature = "tiktoken")]
+pub use token_counter::TikTokenCounter;
 pub use token_counting::{CharApproxCounter, TokenCounter};
 pub use traits::tool::{ErasedTool, Tool, ToolSchema};
 pub use traits::tool_registry::{SimpleRegistry, ToolRegistry};
 pub use traits::tracker::Tracker;
-pub use transformers::{BudgetAwareTruncator, JsonExtractor, TransformerChain};
+pub use transformers::{
+    BudgetAwareTruncator, FullOutputRetriever, JsonExtractor, ProgressiveTransformer,
+    TransformerChain,
+};
 
 // Re-export v0.2.0 traits
 pub use default_strategy::DefaultStrategy;
@@ -128,7 +134,13 @@ pub mod prelude {
     pub use crate::traits::provider::{ModelInfo, ModelTier, Provider};
     pub use crate::traits::tool::{ErasedTool, Tool, ToolSchema};
     pub use crate::traits::tool_registry::{SimpleRegistry, ToolRegistry};
+
+    // v0.4.0: Advanced registries
+    pub use crate::registries::{AdaptiveRegistry, GroupedRegistry};
+
+    // v0.4.0: Progressive transformer
     pub use crate::traits::tracker::Tracker;
+    pub use crate::transformers::{FullOutputRetriever, ProgressiveTransformer};
 
     // v0.3.0: Built-in context managers
     pub use crate::context_managers::{LlmCompressor, RuleBasedCompressor, TieredCompressor};

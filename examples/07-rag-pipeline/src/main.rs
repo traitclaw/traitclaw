@@ -3,6 +3,11 @@
 //! Demonstrates using `KeywordRetriever` and `GroundingStrategy` to
 //! retrieve relevant documents and inject them as context for the agent.
 //! No external vector database required — uses built-in BM25 scoring.
+//!
+//! > **⚠️ Superseded by v0.5.0:** See `examples/21-rag-pipeline` for the
+//! > updated version featuring `RecursiveChunker`, `HybridRetriever`, and
+//! > `RagContextManager`. This example uses the v0.4 API and is kept for
+//! > backward reference only.
 
 use traitclaw::prelude::*;
 use traitclaw_openai_compat::OpenAiCompatProvider;

@@ -31,8 +31,8 @@ pub use steering::Steering;
 /// Convenience prelude — import everything at once.
 pub mod prelude {
     pub use crate::guards::{
-        LoopDetectionGuard, PromptInjectionGuard, ShellDenyGuard, ToolBudgetGuard,
-        WorkspaceBoundaryGuard,
+        ContentFilterGuard, LoopDetectionGuard, PromptInjectionGuard, RateLimitGuard,
+        ShellDenyGuard, ToolBudgetGuard, WorkspaceBoundaryGuard,
     };
     pub use crate::hints::{BudgetHint, SystemPromptReminder, TeamProgressHint, TruncationHint};
     pub use crate::steering::Steering;

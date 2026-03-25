@@ -9,7 +9,7 @@ use traitclaw_core::ToolSchema;
 
 use crate::wire::{
     AnthropicContent, AnthropicMessage, AnthropicTool, ContentBlock, MessagesRequest,
-    MessagesResponse, ResponseContentBlock,
+    MessagesResponse, ResponseContentBlock, ThinkingParam,
 };
 
 /// Convert a `CompletionRequest` into an Anthropic `MessagesRequest`.
@@ -79,6 +79,7 @@ pub(crate) fn to_wire(req: CompletionRequest) -> MessagesRequest {
         temperature: req.temperature,
         tools,
         stream: req.stream,
+        thinking: None, // set by AnthropicProvider when extended thinking is enabled
     }
 }
 
@@ -113,6 +114,9 @@ fn simplify_schema(mut schema: serde_json::Value) -> serde_json::Value {
 }
 
 /// Convert an Anthropic `MessagesResponse` to a `CompletionResponse`.
+///
+/// Thinking blocks are intentionally skipped from the main content —
+/// they are Claude's internal reasoning and not part of the public response.
 pub(crate) fn from_wire(wire: MessagesResponse) -> CompletionResponse {
     let usage = Usage {
         prompt_tokens: wire.usage.input_tokens as usize,
@@ -135,6 +139,8 @@ pub(crate) fn from_wire(wire: MessagesResponse) -> CompletionResponse {
                     arguments: input,
                 });
             }
+            // Thinking blocks are intentionally excluded from the public response
+            ResponseContentBlock::Thinking { .. } => {}
         }
     }
 
@@ -145,6 +151,18 @@ pub(crate) fn from_wire(wire: MessagesResponse) -> CompletionResponse {
     };
 
     CompletionResponse { content, usage }
+}
+
+/// Build an Anthropic wire request with extended thinking enabled.
+///
+/// This is used by `AnthropicProvider` when `with_extended_thinking(true)` is set.
+pub(crate) fn to_wire_with_thinking(req: CompletionRequest, budget_tokens: u32) -> MessagesRequest {
+    let mut wire = to_wire(req);
+    wire.thinking = Some(ThinkingParam {
+        r#type: "enabled".to_string(),
+        budget_tokens,
+    });
+    wire
 }
 
 #[cfg(test)]

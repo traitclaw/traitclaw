@@ -24,6 +24,18 @@ pub(crate) struct MessagesRequest {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub tools: Vec<AnthropicTool>,
     pub stream: bool,
+    /// Extended thinking configuration (Claude 3.7+).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub thinking: Option<ThinkingParam>,
+}
+
+/// Extended thinking parameter — enables Claude's chain-of-thought reasoning.
+#[derive(Debug, Serialize, Clone)]
+pub(crate) struct ThinkingParam {
+    /// Must be `"enabled"`.
+    pub r#type: String,
+    /// Token budget for thinking (Anthropic recommends 5000+).
+    pub budget_tokens: u32,
 }
 
 /// A message in the Anthropic wire format.
@@ -112,6 +124,12 @@ pub(crate) enum ResponseContentBlock {
         name: String,
         /// Tool input (already parsed JSON).
         input: serde_json::Value,
+    },
+    /// Thinking block (extended thinking). Content stored separately.
+    Thinking {
+        /// The thinking content (chain-of-thought reasoning).
+        #[allow(dead_code)]
+        thinking: String,
     },
 }
 

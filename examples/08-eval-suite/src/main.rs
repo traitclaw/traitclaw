@@ -3,6 +3,11 @@
 //! Demonstrates using `EvalSuite`, `TestCase`, and `Metric` to assess
 //! agent response quality. Run evaluations deterministically without
 //! hitting a real LLM API — metrics score raw text against expectations.
+//!
+//! > **⚠️ Superseded by v0.5.0:** See `examples/23-eval-runner` for the
+//! > updated version featuring `EvalRunner`, `AsyncMetric`, and
+//! > `SyncMetricAdapter`. This example uses the sync v0.4 API and is kept
+//! > for backward reference only.
 
 use traitclaw_eval::{
     EvalReport, EvalSuite, KeywordMetric, LengthRelevancyMetric, Metric, TestCase, TestResult,

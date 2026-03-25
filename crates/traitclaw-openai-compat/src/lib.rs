@@ -26,6 +26,8 @@
 
 mod convert;
 mod provider;
+pub mod retry;
 mod wire;
 
 pub use provider::{OpenAiCompatConfig, OpenAiCompatProvider};
+pub use retry::RetryPolicy;

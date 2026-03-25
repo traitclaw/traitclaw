@@ -18,6 +18,8 @@ const GROQ_BASE: &str = "https://api.groq.com/openai/v1";
 const TOGETHER_BASE: &str = "https://api.together.xyz/v1";
 const MISTRAL_BASE: &str = "https://api.mistral.ai/v1";
 const OLLAMA_BASE: &str = "http://localhost:11434/v1";
+const DEEPSEEK_BASE: &str = "https://api.deepseek.com/v1";
+const XAI_BASE: &str = "https://api.x.ai/v1";
 
 // ─── Key resolution helpers ───────────────────────────────────────────────────
 
@@ -178,6 +180,62 @@ pub fn custom(
     OpenAiCompatProvider::new(OpenAiCompatConfig {
         base_url: base_url.into(),
         api_key: api_key.into(),
+        model: model.into(),
+        model_info: None,
+    })
+}
+
+/// Create a **DeepSeek** provider, reading `DEEPSEEK_API_KEY` from the environment.
+///
+/// # Panics / Warnings
+///
+/// Prints a warning to stderr if `DEEPSEEK_API_KEY` is not set. Requests will
+/// fail with HTTP 401 until a valid key is configured.
+///
+/// # Example
+///
+/// ```rust,no_run
+/// use traitclaw_openai::deepseek;
+///
+/// let provider = deepseek("deepseek-chat");
+/// ```
+#[must_use]
+pub fn deepseek(model: impl Into<String>) -> OpenAiCompatProvider {
+    let api_key = env_key("DEEPSEEK_API_KEY");
+    if api_key.is_empty() {
+        tracing::warn!("DEEPSEEK_API_KEY is not set — requests will fail with HTTP 401");
+    }
+    OpenAiCompatProvider::new(OpenAiCompatConfig {
+        base_url: DEEPSEEK_BASE.to_string(),
+        api_key,
+        model: model.into(),
+        model_info: None,
+    })
+}
+
+/// Create an **xAI** (Grok) provider, reading `XAI_API_KEY` from the environment.
+///
+/// # Panics / Warnings
+///
+/// Prints a warning to stderr if `XAI_API_KEY` is not set. Requests will
+/// fail with HTTP 401 until a valid key is configured.
+///
+/// # Example
+///
+/// ```rust,no_run
+/// use traitclaw_openai::xai;
+///
+/// let provider = xai("grok-2");
+/// ```
+#[must_use]
+pub fn xai(model: impl Into<String>) -> OpenAiCompatProvider {
+    let api_key = env_key("XAI_API_KEY");
+    if api_key.is_empty() {
+        tracing::warn!("XAI_API_KEY is not set — requests will fail with HTTP 401");
+    }
+    OpenAiCompatProvider::new(OpenAiCompatConfig {
+        base_url: XAI_BASE.to_string(),
+        api_key,
         model: model.into(),
         model_info: None,
     })
