@@ -84,6 +84,13 @@ The core architectural insight is that context overflow has three independent so
 
 ### Growth Features (Post-MVP — v0.4.0+)
 
+**Deferred from v0.3.0 MVP (2026-03-25 decision):**
+- `GroupedRegistry` — Named tool groups with group-level activation.
+- `AdaptiveRegistry` — Auto-limits tool count based on `ModelTier`.
+- `ProgressiveTransformer` — Returns summary first; provides full on LLM request.
+- `TikTokenCounter` — Accurate token counting via `tiktoken-rs` (feature-gated).
+
+**Originally planned for v0.4.0+:**
 - `McpToolRegistry` — Discover and register tools from MCP servers on demand.
 - `EmbeddingCompressor` — Use embeddings for semantic importance scoring.
 - `StreamingOutputTransformer` — Process tool output chunks as they arrive.
