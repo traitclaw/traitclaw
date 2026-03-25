@@ -261,3 +261,103 @@ async fn test_tool_call_lifecycle() {
         "should take 2 iterations (tool call + response)"
     );
 }
+
+// ───────────── v0.3.0 Async Trait Integration Tests ─────────────
+
+#[tokio::test]
+async fn test_builder_with_context_manager() {
+    // Verify .context_manager() builder method works end-to-end
+    use traitclaw_core::traits::context_manager::ContextManager;
+    use traitclaw_core::types::agent_state::AgentState;
+    use traitclaw_core::types::message::Message;
+
+    struct PassthroughManager;
+
+    #[async_trait]
+    impl ContextManager for PassthroughManager {
+        async fn prepare(
+            &self,
+            _messages: &mut Vec<Message>,
+            _context_window: usize,
+            _state: &mut AgentState,
+        ) {
+            // No-op: pass through all messages unchanged
+        }
+    }
+
+    let agent = Agent::builder()
+        .model(MockProvider::new("with context manager"))
+        .context_manager(PassthroughManager)
+        .build()
+        .unwrap();
+
+    let output = agent.run("test").await.unwrap();
+    assert_eq!(output.text(), "with context manager");
+}
+
+#[tokio::test]
+async fn test_builder_with_output_transformer() {
+    // Verify .output_transformer() builder method works end-to-end
+    use traitclaw_core::BudgetAwareTruncator;
+
+    let agent = Agent::builder()
+        .model(MockProvider::new("with transformer"))
+        .output_transformer(BudgetAwareTruncator::new(5000, 0.8))
+        .build()
+        .unwrap();
+
+    let output = agent.run("test").await.unwrap();
+    assert_eq!(output.text(), "with transformer");
+}
+
+#[tokio::test]
+async fn test_builder_with_tool_registry() {
+    // Verify .tool_registry() builder method with DynamicRegistry
+    use traitclaw_core::DynamicRegistry;
+
+    let registry = DynamicRegistry::new();
+    registry.register(Arc::new(GreetTool));
+
+    let agent = Agent::builder()
+        .model(ToolCallProvider::new())
+        .tool_registry(registry)
+        .tool(GreetTool) // still add to legacy tools for actual execution
+        .build()
+        .unwrap();
+
+    let output = agent.run("Greet Rust").await.unwrap();
+    assert_eq!(output.text(), "Tool result processed!");
+}
+
+#[tokio::test]
+async fn test_builder_all_v030_traits() {
+    // Verify all 3 new builder methods work together
+    use traitclaw_core::traits::context_manager::ContextManager;
+    use traitclaw_core::types::agent_state::AgentState;
+    use traitclaw_core::types::message::Message;
+    use traitclaw_core::{BudgetAwareTruncator, DynamicRegistry};
+
+    struct CustomManager;
+    #[async_trait]
+    impl ContextManager for CustomManager {
+        async fn prepare(
+            &self,
+            _messages: &mut Vec<Message>,
+            _context_window: usize,
+            _state: &mut AgentState,
+        ) {
+        }
+    }
+
+    let agent = Agent::builder()
+        .model(MockProvider::new("all v0.3.0"))
+        .context_manager(CustomManager)
+        .output_transformer(BudgetAwareTruncator::default())
+        .tool_registry(DynamicRegistry::new())
+        .system("Testing all v0.3.0 traits")
+        .build()
+        .unwrap();
+
+    let output = agent.run("test").await.unwrap();
+    assert_eq!(output.text(), "all v0.3.0");
+}

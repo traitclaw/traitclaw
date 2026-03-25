@@ -5,6 +5,16 @@
 /// Trait for processing tool output before adding it to the message context.
 ///
 /// Implementations MUST be sync (no I/O) and fast.
+///
+/// # Deprecated
+///
+/// Use [`OutputTransformer`](crate::traits::output_transformer::OutputTransformer) instead.
+/// `OutputProcessor` is automatically bridged via a blanket impl.
+#[deprecated(
+    since = "0.3.0",
+    note = "Use OutputTransformer instead. OutputProcessor will be removed in v1.0.0. \
+            Existing impls work automatically via blanket impl."
+)]
 pub trait OutputProcessor: Send + Sync {
     /// Process a tool output string and return the (possibly modified) result.
     fn process(&self, output: String) -> String;
@@ -13,6 +23,7 @@ pub trait OutputProcessor: Send + Sync {
 /// Returns output unchanged.
 pub struct NoopProcessor;
 
+#[allow(deprecated)]
 impl OutputProcessor for NoopProcessor {
     fn process(&self, output: String) -> String {
         output
@@ -39,6 +50,7 @@ impl TruncateProcessor {
     }
 }
 
+#[allow(deprecated)]
 impl OutputProcessor for TruncateProcessor {
     fn process(&self, output: String) -> String {
         // Count characters, not bytes, to avoid panicking on multi-byte UTF-8.
@@ -59,10 +71,12 @@ impl OutputProcessor for TruncateProcessor {
 }
 
 /// Composes multiple processors in order — output flows through each stage.
+#[allow(deprecated)]
 pub struct ChainProcessor {
     processors: Vec<Box<dyn OutputProcessor>>,
 }
 
+#[allow(deprecated)]
 impl ChainProcessor {
     /// Create a chain from a list of processors.
     #[must_use]
@@ -71,6 +85,7 @@ impl ChainProcessor {
     }
 }
 
+#[allow(deprecated)]
 impl OutputProcessor for ChainProcessor {
     fn process(&self, mut output: String) -> String {
         for p in &self.processors {
@@ -81,6 +96,7 @@ impl OutputProcessor for ChainProcessor {
 }
 
 #[cfg(test)]
+#[allow(deprecated)]
 mod tests {
     use super::*;
 

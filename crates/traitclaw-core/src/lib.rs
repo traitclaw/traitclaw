@@ -38,14 +38,19 @@ pub mod config;
 pub mod default_strategy;
 pub mod error;
 pub mod memory;
+pub mod registries;
 pub mod retry;
 pub(crate) mod runtime;
 pub(crate) mod streaming;
+pub mod token_counting;
+pub mod transformers;
 
 #[cfg(test)]
 pub(crate) mod test_utils;
 
 // Re-export core traits at crate root
+pub use traits::context_manager::ContextManager;
+#[allow(deprecated)]
 pub use traits::context_strategy::{ContextStrategy, NoopContextStrategy, SlidingWindowStrategy};
 pub use traits::execution_strategy::{
     AdaptiveStrategy, ExecutionStrategy, ParallelStrategy, PendingToolCall, SequentialStrategy,
@@ -54,14 +59,20 @@ pub use traits::execution_strategy::{
 pub use traits::guard::{Guard, GuardResult};
 pub use traits::hint::{Hint, HintMessage, HintPriority, InjectionPoint};
 pub use traits::memory::Memory;
+#[allow(deprecated)]
 pub use traits::output_processor::{
     ChainProcessor, NoopProcessor, OutputProcessor, TruncateProcessor,
 };
+pub use traits::output_transformer::OutputTransformer;
 pub use traits::provider::Provider;
 
+pub use registries::DynamicRegistry;
 pub use retry::{RetryConfig, RetryProvider};
+pub use token_counting::{CharApproxCounter, TokenCounter};
 pub use traits::tool::{ErasedTool, Tool, ToolSchema};
+pub use traits::tool_registry::{SimpleRegistry, ToolRegistry};
 pub use traits::tracker::Tracker;
+pub use transformers::{BudgetAwareTruncator, JsonExtractor, TransformerChain};
 
 // Re-export v0.2.0 traits
 pub use default_strategy::DefaultStrategy;
@@ -98,6 +109,8 @@ pub use agent_builder::AgentBuilder;
 /// ```
 pub mod prelude {
 
+    pub use crate::traits::context_manager::ContextManager;
+    #[allow(deprecated)]
     pub use crate::traits::context_strategy::{
         ContextStrategy, NoopContextStrategy, SlidingWindowStrategy,
     };
@@ -107,9 +120,12 @@ pub mod prelude {
     pub use crate::traits::guard::{Guard, GuardResult};
     pub use crate::traits::hint::{Hint, HintMessage};
     pub use crate::traits::memory::Memory;
+    #[allow(deprecated)]
     pub use crate::traits::output_processor::{OutputProcessor, TruncateProcessor};
+    pub use crate::traits::output_transformer::OutputTransformer;
     pub use crate::traits::provider::{ModelInfo, ModelTier, Provider};
     pub use crate::traits::tool::{ErasedTool, Tool, ToolSchema};
+    pub use crate::traits::tool_registry::{SimpleRegistry, ToolRegistry};
     pub use crate::traits::tracker::Tracker;
 
     pub use crate::types::action::Action;

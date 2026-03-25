@@ -1,0 +1,196 @@
+//! Async tool output transformation — the v0.3.0 evolution of [`OutputProcessor`].
+//!
+//! [`OutputTransformer`] is the async replacement for the sync [`OutputProcessor`] trait.
+//! It adds context-awareness (tool name and agent state) and supports async operations
+//! such as LLM-powered summarization of tool output.
+//!
+//! A blanket implementation is provided so that any existing [`OutputProcessor`]
+//! implementation automatically works as an [`OutputTransformer`] with zero code changes.
+//!
+//! # Example
+//!
+//! ```rust
+//! use traitclaw_core::traits::output_transformer::OutputTransformer;
+//! use traitclaw_core::types::agent_state::AgentState;
+//! use async_trait::async_trait;
+//!
+//! struct BudgetAwareTransformer {
+//!     max_chars: usize,
+//! }
+//!
+//! #[async_trait]
+//! impl OutputTransformer for BudgetAwareTransformer {
+//!     async fn transform(
+//!         &self,
+//!         output: String,
+//!         tool_name: &str,
+//!         state: &AgentState,
+//!     ) -> String {
+//!         // Truncate more aggressively when context is nearly full
+//!         let budget = if state.context_utilization() > 0.8 {
+//!             self.max_chars / 2
+//!         } else {
+//!             self.max_chars
+//!         };
+//!         if output.len() > budget {
+//!             format!("{}...\n[truncated]", &output[..budget])
+//!         } else {
+//!             output
+//!         }
+//!     }
+//! }
+//! ```
+
+use async_trait::async_trait;
+
+#[allow(deprecated)]
+use crate::traits::output_processor::OutputProcessor;
+use crate::types::agent_state::AgentState;
+
+/// Async trait for context-aware tool output transformation.
+///
+/// Called after each tool execution to process the output before adding it
+/// to the message context. Supports async operations such as LLM-powered
+/// summarization.
+///
+/// # Migration from `OutputProcessor`
+///
+/// `OutputTransformer` replaces the sync [`OutputProcessor`] trait.
+/// Existing `OutputProcessor` implementations work automatically via a blanket impl.
+/// The blanket impl ignores the `tool_name` and `state` parameters.
+#[async_trait]
+pub trait OutputTransformer: Send + Sync {
+    /// Transform tool output, optionally using context about which tool
+    /// produced it and the current agent state.
+    ///
+    /// `tool_name` identifies the tool that produced the output.
+    /// `state` provides runtime context (token usage, iteration count, etc.).
+    async fn transform(&self, output: String, tool_name: &str, state: &AgentState) -> String;
+
+    /// Estimate token count for a given output string.
+    ///
+    /// Default: 4-characters ≈ 1-token approximation.
+    fn estimate_output_tokens(&self, output: &str) -> usize {
+        output.len() / 4 + 1
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Blanket impl: any OutputProcessor automatically becomes an OutputTransformer
+// ---------------------------------------------------------------------------
+
+#[allow(deprecated)]
+#[async_trait]
+impl<T: OutputProcessor + 'static> OutputTransformer for T {
+    async fn transform(&self, output: String, _tool_name: &str, _state: &AgentState) -> String {
+        // Delegate to the sync OutputProcessor::process, ignoring context
+        OutputProcessor::process(self, output)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::types::model_info::ModelTier;
+    use std::sync::Arc;
+
+    // ── Object safety: confirm Arc<dyn OutputTransformer> compiles ───────
+    #[test]
+    fn test_output_transformer_is_object_safe() {
+        struct Dummy;
+
+        #[async_trait]
+        impl OutputTransformer for Dummy {
+            async fn transform(
+                &self,
+                output: String,
+                _tool_name: &str,
+                _state: &AgentState,
+            ) -> String {
+                output
+            }
+        }
+
+        let _: Arc<dyn OutputTransformer> = Arc::new(Dummy);
+    }
+
+    // ── Blanket impl: OutputProcessor → OutputTransformer ────────────────
+    #[tokio::test]
+    async fn test_blanket_impl_delegates_to_output_processor() {
+        #[allow(deprecated)]
+        use crate::traits::output_processor::TruncateProcessor;
+
+        let processor = TruncateProcessor::new(10);
+        let state = AgentState::new(ModelTier::Small, 4096);
+
+        // Short input — should pass through
+        let result =
+            OutputTransformer::transform(&processor, "hello".to_string(), "test_tool", &state)
+                .await;
+        assert_eq!(result, "hello");
+
+        // Long input — should be truncated
+        let long = "12345678901234567890".to_string();
+        let result = OutputTransformer::transform(&processor, long, "test_tool", &state).await;
+        assert!(
+            result.contains("[output truncated]"),
+            "blanket impl should delegate to sync process: {result}"
+        );
+    }
+
+    // ── Default estimate_output_tokens() ────────────────────────────────
+    #[test]
+    fn test_default_estimate_output_tokens() {
+        struct Dummy;
+
+        #[async_trait]
+        impl OutputTransformer for Dummy {
+            async fn transform(
+                &self,
+                output: String,
+                _tool_name: &str,
+                _state: &AgentState,
+            ) -> String {
+                output
+            }
+        }
+
+        let t = Dummy;
+        // 400 chars → 400/4 + 1 = 101 tokens
+        assert_eq!(t.estimate_output_tokens(&"a".repeat(400)), 101);
+        // empty → 0/4 + 1 = 1 token
+        assert_eq!(t.estimate_output_tokens(""), 1);
+    }
+
+    // ── Context-aware transformer test ──────────────────────────────────
+    #[tokio::test]
+    async fn test_context_aware_transformer() {
+        struct ToolAwareTransformer;
+
+        #[async_trait]
+        impl OutputTransformer for ToolAwareTransformer {
+            async fn transform(
+                &self,
+                output: String,
+                tool_name: &str,
+                state: &AgentState,
+            ) -> String {
+                format!(
+                    "[tool={}, util={:.0}%] {}",
+                    tool_name,
+                    state.context_utilization() * 100.0,
+                    output
+                )
+            }
+        }
+
+        let t = ToolAwareTransformer;
+        let mut state = AgentState::new(ModelTier::Medium, 1000);
+        state.total_context_tokens = 750;
+
+        let result = t.transform("data".to_string(), "search", &state).await;
+        assert!(result.contains("tool=search"), "should include tool name");
+        assert!(result.contains("75%"), "should include utilization");
+        assert!(result.contains("data"), "should include original output");
+    }
+}

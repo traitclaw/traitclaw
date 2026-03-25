@@ -8,16 +8,21 @@ use crate::agent::Agent;
 use crate::config::AgentConfig;
 use crate::default_strategy::DefaultStrategy;
 use crate::memory::in_memory::InMemoryMemory;
+use crate::traits::context_manager::ContextManager;
+#[allow(deprecated)]
 use crate::traits::context_strategy::{ContextStrategy, SlidingWindowStrategy};
 use crate::traits::execution_strategy::{ExecutionStrategy, SequentialStrategy};
 use crate::traits::guard::{Guard, NoopGuard};
 use crate::traits::hint::{Hint, NoopHint};
 use crate::traits::hook::AgentHook;
 use crate::traits::memory::Memory;
+#[allow(deprecated)]
 use crate::traits::output_processor::{OutputProcessor, TruncateProcessor};
+use crate::traits::output_transformer::OutputTransformer;
 use crate::traits::provider::Provider;
 use crate::traits::strategy::AgentStrategy;
 use crate::traits::tool::ErasedTool;
+use crate::traits::tool_registry::{SimpleRegistry, ToolRegistry};
 use crate::traits::tracker::{NoopTracker, Tracker};
 use crate::Result;
 
@@ -38,6 +43,7 @@ use crate::Result;
 /// # Ok(())
 /// # }
 /// ```
+#[allow(deprecated)]
 pub struct AgentBuilder {
     provider: Option<Arc<dyn Provider>>,
     tools: Vec<Arc<dyn ErasedTool>>,
@@ -45,14 +51,18 @@ pub struct AgentBuilder {
     guards: Vec<Arc<dyn Guard>>,
     hints: Vec<Arc<dyn Hint>>,
     tracker: Option<Arc<dyn Tracker>>,
+    context_manager: Option<Arc<dyn ContextManager>>,
     context_strategy: Option<Arc<dyn ContextStrategy>>,
     execution_strategy: Option<Arc<dyn ExecutionStrategy>>,
+    output_transformer: Option<Arc<dyn OutputTransformer>>,
     output_processor: Option<Arc<dyn OutputProcessor>>,
+    tool_registry: Option<Arc<dyn ToolRegistry>>,
     strategy: Option<Box<dyn AgentStrategy>>,
     hooks: Vec<Arc<dyn AgentHook>>,
     config: AgentConfig,
 }
 
+#[allow(deprecated)]
 impl AgentBuilder {
     /// Create a new builder with default configuration.
     #[must_use]
@@ -64,9 +74,12 @@ impl AgentBuilder {
             guards: Vec::new(),
             hints: Vec::new(),
             tracker: None,
+            context_manager: None,
             context_strategy: None,
             execution_strategy: None,
+            output_transformer: None,
             output_processor: None,
+            tool_registry: None,
             strategy: None,
             hooks: Vec::new(),
             config: AgentConfig::default(),
@@ -209,14 +222,23 @@ impl AgentBuilder {
         self
     }
 
-    /// Set the context window management strategy.
+    /// Set the context window management strategy (v0.2.0 — deprecated).
     ///
-    /// Default: [`SlidingWindowStrategy`] with threshold 0.85.
-    /// Use [`NoopContextStrategy`](crate::traits::context_strategy::NoopContextStrategy)
-    /// to disable automatic context management.
+    /// **Deprecated:** Use [`context_manager()`](Self::context_manager) instead.
+    /// Existing strategies are automatically bridged via blanket impl.
     #[must_use]
     pub fn context_strategy(mut self, strategy: impl ContextStrategy + 'static) -> Self {
         self.context_strategy = Some(Arc::new(strategy));
+        self
+    }
+
+    /// Set the async context window manager (v0.3.0).
+    ///
+    /// Supports LLM-powered compression and accurate token counting.
+    /// Default: `SlidingWindowStrategy` (bridged from v0.2.0).
+    #[must_use]
+    pub fn context_manager(mut self, manager: impl ContextManager + 'static) -> Self {
+        self.context_manager = Some(Arc::new(manager));
         self
     }
 
@@ -230,13 +252,33 @@ impl AgentBuilder {
         self
     }
 
-    /// Set the tool output processor.
+    /// Set the tool output processor (v0.2.0 — deprecated).
     ///
-    /// Default: [`TruncateProcessor`] (10,000 chars).
-    /// Use [`NoopProcessor`](crate::traits::output_processor::NoopProcessor) for raw output.
+    /// **Deprecated:** Use [`output_transformer()`](Self::output_transformer) instead.
+    /// Existing processors are automatically bridged via blanket impl.
     #[must_use]
     pub fn output_processor(mut self, processor: impl OutputProcessor + 'static) -> Self {
         self.output_processor = Some(Arc::new(processor));
+        self
+    }
+
+    /// Set the async tool output transformer (v0.3.0).
+    ///
+    /// Supports context-aware, async tool output processing.
+    /// Default: `TruncateProcessor` (bridged from v0.2.0, 10,000 chars).
+    #[must_use]
+    pub fn output_transformer(mut self, transformer: impl OutputTransformer + 'static) -> Self {
+        self.output_transformer = Some(Arc::new(transformer));
+        self
+    }
+
+    /// Set the dynamic tool registry (v0.3.0).
+    ///
+    /// Enables runtime tool activation/deactivation.
+    /// Default: `SimpleRegistry` wrapping configured tools.
+    #[must_use]
+    pub fn tool_registry(mut self, registry: impl ToolRegistry + 'static) -> Self {
+        self.tool_registry = Some(Arc::new(registry));
         self
     }
 
@@ -297,17 +339,32 @@ impl AgentBuilder {
 
         let tracker = self.tracker.unwrap_or_else(|| Arc::new(NoopTracker));
 
-        let context_strategy = self
+        let default_ctx = SlidingWindowStrategy::default();
+        let context_strategy: Arc<dyn ContextStrategy> = self
             .context_strategy
             .unwrap_or_else(|| Arc::new(SlidingWindowStrategy::default()));
+        // v0.3.0: context_manager defaults to a fresh SlidingWindowStrategy (bridged)
+        let context_manager: Arc<dyn ContextManager> = self
+            .context_manager
+            .unwrap_or_else(|| Arc::new(default_ctx));
 
         let execution_strategy = self
             .execution_strategy
             .unwrap_or_else(|| Arc::new(SequentialStrategy));
 
-        let output_processor = self
+        let default_out = TruncateProcessor::default();
+        let output_processor: Arc<dyn OutputProcessor> = self
             .output_processor
             .unwrap_or_else(|| Arc::new(TruncateProcessor::default()));
+        // v0.3.0: output_transformer defaults to a fresh TruncateProcessor (bridged)
+        let output_transformer: Arc<dyn OutputTransformer> = self
+            .output_transformer
+            .unwrap_or_else(|| Arc::new(default_out));
+
+        // v0.3.0: tool_registry defaults to SimpleRegistry wrapping configured tools
+        let tool_registry: Arc<dyn ToolRegistry> = self
+            .tool_registry
+            .unwrap_or_else(|| Arc::new(SimpleRegistry::new(self.tools.clone())));
 
         // Default to in-memory if no memory configured
         let memory = self
@@ -323,9 +380,12 @@ impl AgentBuilder {
             guards,
             hints,
             tracker,
+            context_manager,
             context_strategy,
             execution_strategy,
+            output_transformer,
             output_processor,
+            tool_registry,
             strategy,
             self.hooks,
             self.config,

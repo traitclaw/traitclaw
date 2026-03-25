@@ -27,6 +27,7 @@ use crate::Result;
 pub struct DefaultStrategy;
 
 #[async_trait]
+#[allow(deprecated)]
 impl AgentStrategy for DefaultStrategy {
     #[tracing::instrument(skip_all, fields(session_id = session_id, model = %runtime.provider.model_info().name))]
     async fn execute(
@@ -67,8 +68,9 @@ impl AgentStrategy for DefaultStrategy {
             inject_hints(runtime, &state, &mut messages);
 
             runtime
-                .context_strategy
-                .prepare(&mut messages, model_info.context_window, &mut state);
+                .context_manager
+                .prepare(&mut messages, model_info.context_window, &mut state)
+                .await;
 
             let request = CompletionRequest {
                 model: model_info.name.clone(),
@@ -217,6 +219,7 @@ fn inject_hints(runtime: &AgentRuntime, state: &AgentState, messages: &mut Vec<M
 }
 
 /// Process tool calls with hook interception support.
+#[allow(deprecated)]
 async fn process_tool_calls(
     runtime: &AgentRuntime,
     tool_calls: &[ToolCall],
@@ -270,7 +273,10 @@ async fn process_tool_calls(
             .await;
 
         for result in results {
-            let processed = runtime.output_processor.process(result.output);
+            let processed = runtime
+                .output_transformer
+                .transform(result.output, &tc.name, state)
+                .await;
 
             // Fire after_tool_execute hooks
             for hook in &runtime.hooks {

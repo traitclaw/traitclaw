@@ -12,6 +12,16 @@ use crate::types::message::{Message, MessageRole};
 /// the model's context window.
 ///
 /// Implementations MUST NOT remove system messages.
+///
+/// # Deprecated
+///
+/// Use [`ContextManager`](crate::traits::context_manager::ContextManager) instead.
+/// `ContextStrategy` is automatically bridged via a blanket impl.
+#[deprecated(
+    since = "0.3.0",
+    note = "Use ContextManager instead. ContextStrategy will be removed in v1.0.0. \
+            Existing impls work automatically via blanket impl."
+)]
 pub trait ContextStrategy: Send + Sync {
     /// Prepare the message list by pruning if necessary.
     ///
@@ -24,6 +34,7 @@ pub trait ContextStrategy: Send + Sync {
 /// Use this when you want full manual control over context length.
 pub struct NoopContextStrategy;
 
+#[allow(deprecated)]
 impl ContextStrategy for NoopContextStrategy {
     fn prepare(
         &self,
@@ -64,6 +75,7 @@ impl SlidingWindowStrategy {
     }
 }
 
+#[allow(deprecated)]
 impl ContextStrategy for SlidingWindowStrategy {
     #[allow(
         clippy::cast_possible_truncation,
@@ -91,6 +103,7 @@ impl ContextStrategy for SlidingWindowStrategy {
 }
 
 #[cfg(test)]
+#[allow(deprecated)]
 mod tests {
     use super::*;
 

@@ -27,6 +27,9 @@ members = [
     "examples/12-lifecycle-hooks",
     "examples/13-custom-router",
     "examples/14-compressed-memory",
+    "examples/15-context-manager",
+    "examples/16-output-transformer",
+    "examples/17-dynamic-tools",
     "showcase/miniclaw",
 ]
 
