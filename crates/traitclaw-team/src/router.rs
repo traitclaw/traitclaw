@@ -317,4 +317,35 @@ mod tests {
         state.next_iteration();
         assert_eq!(state.iteration, 1);
     }
+
+    #[test]
+    fn test_leader_delegates_to_nonexistent_agent() {
+        // Edge case: leader delegates to an agent not in the team
+        // Should fall through to Complete (agent_id not found in state.agents)
+        let router = LeaderRouter::new("leader");
+        let state = TeamState::new(vec!["leader".into(), "writer".into()]);
+
+        let msg = TeamMessage::new("leader", "@ghost: Do something");
+        assert_eq!(
+            router.route(&msg, &state),
+            RoutingDecision::Complete("@ghost: Do something".into()),
+            "delegation to non-member should fall through to Complete"
+        );
+    }
+
+    #[test]
+    fn test_leader_message_with_at_but_no_colon() {
+        // Edge case: "@writer please help" has no colon — split(':').next()
+        // returns "writer please help", which doesn't match any agent
+        let router = LeaderRouter::new("leader");
+        let state = TeamState::new(vec!["leader".into(), "writer".into()]);
+
+        let msg = TeamMessage::new("leader", "@writer please help");
+        // "writer please help" != "writer", so this is treated as Complete
+        assert_eq!(
+            router.route(&msg, &state),
+            RoutingDecision::Complete("@writer please help".into()),
+            "@ without colon should not match agent name"
+        );
+    }
 }

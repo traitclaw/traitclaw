@@ -42,6 +42,9 @@ pub mod retry;
 pub(crate) mod runtime;
 pub(crate) mod streaming;
 
+#[cfg(test)]
+pub(crate) mod test_utils;
+
 // Re-export core traits at crate root
 pub use traits::context_strategy::{ContextStrategy, NoopContextStrategy, SlidingWindowStrategy};
 pub use traits::execution_strategy::{
