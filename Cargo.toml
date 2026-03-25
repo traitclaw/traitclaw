@@ -23,6 +23,10 @@ members = [
     "examples/08-eval-suite",
     "examples/09-multi-agent",
     "examples/10-mcp-client",
+    "examples/11-custom-strategy",
+    "examples/12-lifecycle-hooks",
+    "examples/13-custom-router",
+    "examples/14-compressed-memory",
     "showcase/miniclaw",
 ]
 

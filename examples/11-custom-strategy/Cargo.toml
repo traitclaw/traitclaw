@@ -1,0 +1,13 @@
+[package]
+name = "custom-strategy"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+traitclaw = { path = "../../crates/traitclaw" }
+traitclaw-core = { path = "../../crates/traitclaw-core" }
+traitclaw-openai-compat = { path = "../../crates/traitclaw-openai-compat" }
+tokio = { version = "1", features = ["full"] }
+async-trait = "0.1"
+anyhow = "1"

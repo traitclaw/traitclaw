@@ -6,14 +6,17 @@ use std::sync::Arc;
 
 use crate::agent::Agent;
 use crate::config::AgentConfig;
+use crate::default_strategy::DefaultStrategy;
 use crate::memory::in_memory::InMemoryMemory;
 use crate::traits::context_strategy::{ContextStrategy, SlidingWindowStrategy};
 use crate::traits::execution_strategy::{ExecutionStrategy, SequentialStrategy};
 use crate::traits::guard::{Guard, NoopGuard};
 use crate::traits::hint::{Hint, NoopHint};
+use crate::traits::hook::AgentHook;
 use crate::traits::memory::Memory;
 use crate::traits::output_processor::{OutputProcessor, TruncateProcessor};
 use crate::traits::provider::Provider;
+use crate::traits::strategy::AgentStrategy;
 use crate::traits::tool::ErasedTool;
 use crate::traits::tracker::{NoopTracker, Tracker};
 use crate::Result;
@@ -45,6 +48,8 @@ pub struct AgentBuilder {
     context_strategy: Option<Arc<dyn ContextStrategy>>,
     execution_strategy: Option<Arc<dyn ExecutionStrategy>>,
     output_processor: Option<Arc<dyn OutputProcessor>>,
+    strategy: Option<Box<dyn AgentStrategy>>,
+    hooks: Vec<Arc<dyn AgentHook>>,
     config: AgentConfig,
 }
 
@@ -62,6 +67,8 @@ impl AgentBuilder {
             context_strategy: None,
             execution_strategy: None,
             output_processor: None,
+            strategy: None,
+            hooks: Vec::new(),
             config: AgentConfig::default(),
         }
     }
@@ -233,6 +240,38 @@ impl AgentBuilder {
         self
     }
 
+    /// Set the agent execution strategy.
+    ///
+    /// Default: [`DefaultStrategy`] (preserves v0.1.0 loop behavior).
+    /// Implement [`AgentStrategy`] for custom reasoning architectures.
+    #[must_use]
+    pub fn strategy(mut self, strategy: impl AgentStrategy) -> Self {
+        self.strategy = Some(Box::new(strategy));
+        self
+    }
+
+    /// Add a lifecycle hook for observability and interception.
+    ///
+    /// Multiple hooks can be registered and are called sequentially.
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// use traitclaw_core::traits::hook::LoggingHook;
+    ///
+    /// # fn example() {
+    /// // Agent::builder()
+    /// //     .model(my_provider)
+    /// //     .hook(LoggingHook::new(tracing::Level::INFO))
+    /// //     .build()
+    /// # }
+    /// ```
+    #[must_use]
+    pub fn hook(mut self, hook: impl AgentHook) -> Self {
+        self.hooks.push(Arc::new(hook));
+        self
+    }
+
     /// Build the agent. Returns an error if no provider is configured.
     ///
     /// # Errors
@@ -275,6 +314,8 @@ impl AgentBuilder {
             .memory
             .unwrap_or_else(|| Arc::new(InMemoryMemory::new()));
 
+        let strategy = self.strategy.unwrap_or_else(|| Box::new(DefaultStrategy));
+
         Ok(Agent::new(
             provider,
             self.tools,
@@ -285,6 +326,8 @@ impl AgentBuilder {
             context_strategy,
             execution_strategy,
             output_processor,
+            strategy,
+            self.hooks,
             self.config,
         ))
     }

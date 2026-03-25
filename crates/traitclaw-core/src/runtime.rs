@@ -1,182 +1,9 @@
 //! Agent runtime loop — the execution engine.
 //!
-//! Orchestrates the LLM call → tool execution → steering cycle.
+//! The runtime loop logic has been extracted into [`DefaultStrategy`](crate::default_strategy::DefaultStrategy)
+//! as part of the v0.2.0 AgentStrategy refactoring. This module now only
+//! contains legacy tests that verify agent behavior end-to-end.
 
-use crate::agent::{Agent, AgentOutput, RunUsage};
-use crate::types::agent_state::AgentState;
-use crate::types::completion::{CompletionRequest, ResponseContent};
-use crate::types::message::Message;
-use crate::types::tool_call::ToolCall;
-use crate::Result;
-
-/// Run the full agent loop.
-#[tracing::instrument(skip_all, fields(session_id = session_id, model = %agent.provider.model_info().name))]
-pub(crate) async fn run_agent(agent: &Agent, input: &str, session_id: &str) -> Result<AgentOutput> {
-    let start = std::time::Instant::now();
-    let model_info = agent.provider.model_info();
-
-    let mut state = AgentState::new(model_info.tier, model_info.context_window);
-    if let Some(budget) = agent.config.token_budget {
-        state.token_budget = budget;
-    }
-
-    let mut messages = load_context(agent, session_id, input).await?;
-    let tool_schemas = agent.tools.iter().map(|t| t.schema()).collect::<Vec<_>>();
-
-    // === Agent Loop ===
-    for _iteration in 0..agent.config.max_iterations {
-        state.iteration_count += 1;
-        agent.tracker.on_iteration(&mut state);
-
-        inject_hints(agent, &state, &mut messages);
-
-        // AC-6: Apply context window management before each LLM call
-        agent
-            .context_strategy
-            .prepare(&mut messages, model_info.context_window, &mut state);
-
-        let request = CompletionRequest {
-            model: model_info.name.clone(),
-            messages: messages.clone(),
-            tools: tool_schemas.clone(),
-            max_tokens: agent.config.max_tokens,
-            temperature: agent.config.temperature,
-            response_format: None,
-            stream: false,
-        };
-
-        let response = agent.provider.complete(request).await?;
-
-        state.token_usage += response.usage.total_tokens;
-        state.total_context_tokens = response.usage.prompt_tokens;
-        agent.tracker.on_llm_response(&response, &mut state);
-
-        match response.content {
-            ResponseContent::Text(text) => {
-                let assistant_msg = Message::assistant(&text);
-                // Memory save is non-fatal (Story 7.4 AC:3)
-                if let Err(e) = agent.memory.append(session_id, assistant_msg).await {
-                    tracing::warn!("Failed to save assistant response to memory: {e}");
-                }
-
-                let usage = RunUsage {
-                    tokens: state.token_usage,
-                    iterations: state.iteration_count,
-                    duration: start.elapsed(),
-                };
-
-                #[allow(clippy::cast_possible_truncation)]
-                let duration_ms = usage.duration.as_millis() as u64;
-
-                tracing::info!(
-                    iterations = usage.iterations,
-                    tokens = usage.tokens,
-                    duration_ms,
-                    "Agent completed"
-                );
-
-                return Ok(AgentOutput::text_with_usage(text, usage));
-            }
-            ResponseContent::ToolCalls(tool_calls) => {
-                process_tool_calls(agent, &tool_calls, &state, &mut messages).await;
-            }
-        }
-    }
-
-    Err(crate::Error::Runtime(format!(
-        "Agent reached maximum iterations ({})",
-        agent.config.max_iterations
-    )))
-}
-
-/// Load conversation context: history + system prompt + user message.
-///
-/// Memory failures are non-fatal (Story 7.4 AC:3) — if history load fails,
-/// the agent starts with a fresh context instead of crashing.
-async fn load_context(agent: &Agent, session_id: &str, input: &str) -> Result<Vec<Message>> {
-    let mut messages = agent.memory.messages(session_id).await.unwrap_or_else(|e| {
-        tracing::warn!("Failed to load memory (continuing fresh): {e}");
-        Vec::new()
-    });
-
-    if let Some(ref system_prompt) = agent.config.system_prompt {
-        if messages.is_empty() || messages[0].role != crate::types::message::MessageRole::System {
-            messages.insert(0, Message::system(system_prompt));
-        }
-    }
-
-    let user_msg = Message::user(input);
-    messages.push(user_msg.clone());
-
-    // Memory append is non-fatal (Story 7.4 AC:3)
-    if let Err(e) = agent.memory.append(session_id, user_msg).await {
-        tracing::warn!("Failed to save user message to memory: {e}");
-    }
-
-    Ok(messages)
-}
-
-/// Check hints and inject guidance messages.
-fn inject_hints(agent: &Agent, state: &AgentState, messages: &mut Vec<Message>) {
-    for hint in &agent.hints {
-        if hint.should_trigger(state) {
-            let hint_msg = hint.generate(state);
-            messages.push(Message {
-                role: hint_msg.role,
-                content: hint_msg.content,
-                tool_call_id: None,
-            });
-            tracing::debug!(hint = hint.name(), "Hint injected");
-        }
-    }
-}
-
-/// Process tool calls: delegate to execution strategy and collect results.
-///
-/// DESIGN: errors from individual tool executions are intentionally returned
-/// as error strings rather than propagating `Result`. This allows the LLM to
-/// observe the failure and self-correct in subsequent iterations, which is the
-/// standard agentic pattern. Hard failures (provider errors, memory errors)
-/// still propagate via `?` in the outer `run_agent` loop.
-async fn process_tool_calls(
-    agent: &Agent,
-    tool_calls: &[ToolCall],
-    state: &AgentState,
-    messages: &mut Vec<Message>,
-) {
-    use crate::traits::execution_strategy::PendingToolCall;
-
-    // P-2 guard: providers occasionally return an empty tool-call array via
-    // untagged serde deserialization. Skip to avoid injecting a vestigial
-    // "[Tool calls: ]" message into the context window.
-    if tool_calls.is_empty() {
-        tracing::debug!("process_tool_calls: empty tool-call slice, skipping");
-        return;
-    }
-
-    // Add assistant message summarizing tool calls
-    let summary: Vec<String> = tool_calls
-        .iter()
-        .map(|tc| format!("{}({})", tc.name, tc.arguments))
-        .collect();
-    messages.push(Message::assistant(format!(
-        "[Tool calls: {}]",
-        summary.join(", ")
-    )));
-
-    // Convert to PendingToolCall and delegate to execution strategy
-    let pending: Vec<PendingToolCall> = tool_calls.iter().map(PendingToolCall::from).collect();
-    let results = agent
-        .execution_strategy
-        .execute_batch(pending, &agent.tools, &agent.guards, state)
-        .await;
-
-    for result in results {
-        let processed = agent.output_processor.process(result.output);
-        messages.push(Message::tool_result(&result.id, &processed));
-        tracing::debug!(tool_call_id = result.id.as_str(), "Tool call processed");
-    }
-}
 
 #[cfg(test)]
 mod tests {
@@ -506,5 +333,205 @@ mod tests {
 
         let output = agent.run("Bad args").await.unwrap();
         assert_eq!(output.text(), "Bad args handled");
+    }
+
+    // === v0.2.0 Hook Interception Tests (Story 2.4) ===
+
+    /// Security hook that blocks tools with "dangerous" in the name.
+    struct SecurityHook;
+
+    #[async_trait]
+    impl crate::traits::hook::AgentHook for SecurityHook {
+        async fn before_tool_execute(
+            &self,
+            name: &str,
+            _args: &serde_json::Value,
+        ) -> crate::traits::hook::HookAction {
+            if name.contains("dangerous") {
+                crate::traits::hook::HookAction::Block(
+                    "Blocked by security policy: tool name contains 'dangerous'".into(),
+                )
+            } else {
+                crate::traits::hook::HookAction::Continue
+            }
+        }
+    }
+
+    // ---- Mock Dangerous Tool ----
+    #[derive(Deserialize, schemars::JsonSchema)]
+    struct DangerousInput {
+        #[allow(dead_code)]
+        payload: String,
+    }
+    #[derive(Serialize)]
+    struct DangerousOutput {
+        result: String,
+    }
+
+    struct DangerousTool;
+
+    #[async_trait]
+    impl crate::traits::tool::Tool for DangerousTool {
+        type Input = DangerousInput;
+        type Output = DangerousOutput;
+        fn name(&self) -> &'static str {
+            "dangerous_operation"
+        }
+        fn description(&self) -> &'static str {
+            "A dangerous tool"
+        }
+        async fn execute(&self, _input: Self::Input) -> crate::Result<Self::Output> {
+            Ok(DangerousOutput {
+                result: "SHOULD NOT RUN".into(),
+            })
+        }
+    }
+
+    #[tokio::test]
+    async fn test_hook_blocks_tool_execution() {
+        // Story 2.4: SecurityHook blocks tools with "dangerous" in the name
+        let responses = vec![
+            // First call: LLM requests dangerous_operation
+            CompletionResponse {
+                content: ResponseContent::ToolCalls(vec![ToolCall {
+                    id: "call_danger".into(),
+                    name: "dangerous_operation".into(),
+                    arguments: serde_json::json!({"payload": "evil"}),
+                }]),
+                usage: Usage {
+                    prompt_tokens: 10,
+                    completion_tokens: 5,
+                    total_tokens: 15,
+                },
+            },
+            // Second call: LLM sees block reason and responds
+            CompletionResponse {
+                content: ResponseContent::Text(
+                    "I understand, the dangerous operation was blocked.".into(),
+                ),
+                usage: Usage {
+                    prompt_tokens: 30,
+                    completion_tokens: 10,
+                    total_tokens: 40,
+                },
+            },
+        ];
+
+        let agent = Agent::builder()
+            .model(SequenceProvider::with_responses(responses))
+            .system("You are a test bot")
+            .tool(DangerousTool)
+            .hook(SecurityHook)
+            .build()
+            .unwrap();
+
+        let output = agent.run("Run the dangerous operation").await.unwrap();
+        assert_eq!(
+            output.text(),
+            "I understand, the dangerous operation was blocked."
+        );
+    }
+
+    #[tokio::test]
+    async fn test_hook_allows_safe_tool_execution() {
+        // SecurityHook allows tools without "dangerous" in the name
+        let responses = vec![
+            CompletionResponse {
+                content: ResponseContent::ToolCalls(vec![ToolCall {
+                    id: "call_safe".into(),
+                    name: "echo".into(),
+                    arguments: serde_json::json!({"text": "safe"}),
+                }]),
+                usage: Usage {
+                    prompt_tokens: 10,
+                    completion_tokens: 5,
+                    total_tokens: 15,
+                },
+            },
+            CompletionResponse {
+                content: ResponseContent::Text("Echo worked fine".into()),
+                usage: Usage {
+                    prompt_tokens: 20,
+                    completion_tokens: 5,
+                    total_tokens: 25,
+                },
+            },
+        ];
+
+        let agent = Agent::builder()
+            .model(SequenceProvider::with_responses(responses))
+            .system("You are a test bot")
+            .tool(EchoTool)
+            .hook(SecurityHook)
+            .build()
+            .unwrap();
+
+        let output = agent.run("Use echo").await.unwrap();
+        assert_eq!(output.text(), "Echo worked fine");
+    }
+
+    // Recording hook to verify hook lifecycle call order
+    struct RecordingHook {
+        events: std::sync::Mutex<Vec<String>>,
+    }
+
+    impl RecordingHook {
+        fn new() -> Self {
+            Self {
+                events: std::sync::Mutex::new(Vec::new()),
+            }
+        }
+
+        fn events(&self) -> Vec<String> {
+            self.events.lock().unwrap().clone()
+        }
+    }
+
+    #[async_trait]
+    impl crate::traits::hook::AgentHook for RecordingHook {
+        async fn on_agent_start(&self, _input: &str) {
+            self.events.lock().unwrap().push("agent_start".into());
+        }
+
+        async fn on_agent_end(
+            &self,
+            _output: &crate::agent::AgentOutput,
+            _duration: std::time::Duration,
+        ) {
+            self.events.lock().unwrap().push("agent_end".into());
+        }
+
+        async fn on_provider_start(&self, _request: &CompletionRequest) {
+            self.events.lock().unwrap().push("provider_start".into());
+        }
+
+        async fn on_provider_end(
+            &self,
+            _response: &CompletionResponse,
+            _duration: std::time::Duration,
+        ) {
+            self.events.lock().unwrap().push("provider_end".into());
+        }
+    }
+
+    #[tokio::test]
+    async fn test_hook_lifecycle_order() {
+        // Verify hooks fire in correct order: agent_start → provider_start → provider_end → agent_end
+        let hook = std::sync::Arc::new(RecordingHook::new());
+
+        let agent = Agent::builder()
+            .model(SequenceProvider::text("Hello"))
+            .system("test")
+            .hook(std::sync::Arc::clone(&hook))
+            .build()
+            .unwrap();
+
+        agent.run("Hi").await.unwrap();
+
+        let events = hook.events();
+        assert_eq!(
+            events,
+            vec!["agent_start", "provider_start", "provider_end", "agent_end"]
+        );
     }
 }

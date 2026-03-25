@@ -1,0 +1,10 @@
+[package]
+name = "compressed-memory"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+traitclaw-core = { path = "../../crates/traitclaw-core" }
+tokio = { version = "1", features = ["full"] }
+anyhow = "1"

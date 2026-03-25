@@ -9,9 +9,11 @@ use crate::traits::context_strategy::ContextStrategy;
 use crate::traits::execution_strategy::ExecutionStrategy;
 use crate::traits::guard::Guard;
 use crate::traits::hint::Hint;
+use crate::traits::hook::AgentHook;
 use crate::traits::memory::Memory;
 use crate::traits::output_processor::OutputProcessor;
 use crate::traits::provider::Provider;
+use crate::traits::strategy::{AgentRuntime, AgentStrategy};
 use crate::traits::tool::ErasedTool;
 use crate::traits::tracker::Tracker;
 use crate::types::message::Message;
@@ -126,6 +128,8 @@ pub struct Agent {
     pub(crate) context_strategy: Arc<dyn ContextStrategy>,
     pub(crate) execution_strategy: Arc<dyn ExecutionStrategy>,
     pub(crate) output_processor: Arc<dyn OutputProcessor>,
+    pub(crate) strategy: Box<dyn AgentStrategy>,
+    pub(crate) hooks: Vec<Arc<dyn AgentHook>>,
     pub(crate) config: AgentConfig,
 }
 
@@ -136,6 +140,7 @@ impl std::fmt::Debug for Agent {
             .field("tools", &self.tools.len())
             .field("guards", &self.guards.len())
             .field("hints", &self.hints.len())
+            .field("hooks", &self.hooks.len())
             .field("config", &self.config)
             .finish_non_exhaustive()
     }
@@ -160,6 +165,8 @@ impl Agent {
         context_strategy: Arc<dyn ContextStrategy>,
         execution_strategy: Arc<dyn ExecutionStrategy>,
         output_processor: Arc<dyn OutputProcessor>,
+        strategy: Box<dyn AgentStrategy>,
+        hooks: Vec<Arc<dyn AgentHook>>,
         config: AgentConfig,
     ) -> Self {
         Self {
@@ -172,7 +179,28 @@ impl Agent {
             context_strategy,
             execution_strategy,
             output_processor,
+            strategy,
+            hooks,
             config,
+        }
+    }
+
+    /// Build an [`AgentRuntime`] from this agent's components.
+    ///
+    /// The runtime is passed to the strategy for execution.
+    fn to_runtime(&self) -> AgentRuntime {
+        AgentRuntime {
+            provider: Arc::clone(&self.provider),
+            tools: self.tools.clone(),
+            memory: Arc::clone(&self.memory),
+            guards: self.guards.clone(),
+            hints: self.hints.clone(),
+            tracker: Arc::clone(&self.tracker),
+            context_strategy: Arc::clone(&self.context_strategy),
+            execution_strategy: Arc::clone(&self.execution_strategy),
+            output_processor: Arc::clone(&self.output_processor),
+            hooks: self.hooks.clone(),
+            config: self.config.clone(),
         }
     }
 
@@ -218,7 +246,8 @@ impl Agent {
     /// Returns an error if the provider fails, tool execution fails,
     /// memory operations fail, or max iterations are reached.
     pub async fn run(&self, input: &str) -> Result<AgentOutput> {
-        crate::runtime::run_agent(self, input, "default").await
+        let runtime = self.to_runtime();
+        self.strategy.execute(&runtime, input, "default").await
     }
 
     /// Run the agent and return a streaming response.
@@ -359,7 +388,11 @@ impl AgentSession<'_> {
     /// Returns an error if the provider fails, tool execution fails,
     /// memory operations fail, or max iterations are reached.
     pub async fn say(&self, input: &str) -> Result<AgentOutput> {
-        crate::runtime::run_agent(self.agent, input, &self.session_id).await
+        let runtime = self.agent.to_runtime();
+        self.agent
+            .strategy
+            .execute(&runtime, input, &self.session_id)
+            .await
     }
 
     /// Stream a response within this session.

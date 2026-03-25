@@ -8,6 +8,7 @@
 //!
 //! ```rust
 //! use traitclaw_team::{AgentRole, Team, VerificationChain, VerifyResult};
+//! use traitclaw_team::router::SequentialRouter;
 //!
 //! let team = Team::new("research_team")
 //!     .add_role(AgentRole::new("researcher", "Research topics in depth"))
@@ -22,12 +23,15 @@
 #![warn(clippy::pedantic)]
 #![allow(clippy::module_name_repetitions)]
 
+pub mod router;
+
 use serde::{Deserialize, Serialize};
 
 /// A team of agents working together.
 pub struct Team {
     name: String,
     roles: Vec<AgentRole>,
+    router: Box<dyn router::Router>,
 }
 
 impl Team {
@@ -37,6 +41,7 @@ impl Team {
         Self {
             name: name.into(),
             roles: Vec::new(),
+            router: Box::new(router::SequentialRouter::new()),
         }
     }
 
@@ -63,6 +68,21 @@ impl Team {
     #[must_use]
     pub fn find_role(&self, name: &str) -> Option<&AgentRole> {
         self.roles.iter().find(|r| r.name == name)
+    }
+
+    /// Set a custom router for this team.
+    ///
+    /// Default: [`SequentialRouter`](router::SequentialRouter).
+    #[must_use]
+    pub fn with_router(mut self, router: impl router::Router) -> Self {
+        self.router = Box::new(router);
+        self
+    }
+
+    /// Get a reference to the team's router.
+    #[must_use]
+    pub fn router(&self) -> &dyn router::Router {
+        &*self.router
     }
 }
 

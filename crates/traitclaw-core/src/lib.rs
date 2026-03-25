@@ -35,6 +35,7 @@ pub mod types;
 pub mod agent;
 pub mod agent_builder;
 pub mod config;
+pub mod default_strategy;
 pub mod error;
 pub mod memory;
 pub mod retry;
@@ -59,6 +60,11 @@ pub use retry::{RetryConfig, RetryProvider};
 pub use traits::tool::{ErasedTool, Tool, ToolSchema};
 pub use traits::tracker::Tracker;
 
+// Re-export v0.2.0 traits
+pub use default_strategy::DefaultStrategy;
+pub use traits::hook::{AgentHook, HookAction, LoggingHook};
+pub use traits::strategy::{AgentRuntime, AgentStrategy};
+
 // Re-export core types at crate root
 pub use types::action::Action;
 pub use types::agent_state::AgentState;
@@ -72,6 +78,7 @@ pub use types::tool_call::ToolCall;
 pub use error::{Error, Result};
 
 // Re-export memory implementations
+pub use memory::compressed::CompressedMemory;
 pub use memory::in_memory::InMemoryMemory;
 
 // Re-export agent
@@ -115,4 +122,9 @@ pub mod prelude {
 
     pub use crate::agent::{Agent, AgentOutput, AgentOutputContent, AgentSession, RunUsage};
     pub use crate::agent_builder::AgentBuilder;
+
+    // v0.2.0: Strategy & Hook
+    pub use crate::default_strategy::DefaultStrategy;
+    pub use crate::traits::hook::{AgentHook, HookAction, LoggingHook};
+    pub use crate::traits::strategy::{AgentRuntime, AgentStrategy};
 }
