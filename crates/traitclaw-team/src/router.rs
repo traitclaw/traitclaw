@@ -199,10 +199,17 @@ impl Router for LeaderRouter {
         // Convention: if leader's message starts with "@agent_name:" it's delegation
         // Otherwise, it's the final synthesized output
         if let Some(target) = message.content.strip_prefix('@') {
-            if let Some(agent_id) = target.split(':').next() {
+            let mut parts = target.splitn(2, ':');
+            if let (Some(agent_id), Some(_)) = (parts.next(), parts.next()) {
                 let agent_id = agent_id.trim();
                 if state.agents.iter().any(|a| a == agent_id) {
                     return RoutingDecision::SendTo(agent_id.to_string());
+                } else {
+                    tracing::warn!("Leader delegated to unknown agent: {}", agent_id);
+                    return RoutingDecision::Complete(format!(
+                        "Error: Leader delegated to unknown agent '{}'",
+                        agent_id
+                    ));
                 }
             }
         }
@@ -328,8 +335,8 @@ mod tests {
         let msg = TeamMessage::new("leader", "@ghost: Do something");
         assert_eq!(
             router.route(&msg, &state),
-            RoutingDecision::Complete("@ghost: Do something".into()),
-            "delegation to non-member should fall through to Complete"
+            RoutingDecision::Complete("Error: Leader delegated to unknown agent 'ghost'".into()),
+            "delegation to non-member should return an error message"
         );
     }
 

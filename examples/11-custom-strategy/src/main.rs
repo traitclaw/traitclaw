@@ -62,7 +62,11 @@ impl AgentStrategy for ReflectiveStrategy {
 
         let initial = match response.content {
             ResponseContent::Text(text) => text,
-            _ => return Err(traitclaw_core::Error::Runtime("Unexpected tool call".into())),
+            _ => {
+                return Err(traitclaw_core::Error::Runtime(
+                    "Unexpected tool call".into(),
+                ))
+            }
         };
 
         // Step 2: Ask model to reflect and improve

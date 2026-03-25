@@ -255,12 +255,13 @@ impl Agent {
     /// This uses the `"default"` session for backward compatibility.
     ///
     /// Returns an [`AgentStream`] that yields [`StreamEvent`]s incrementally,
-    /// allowing you to display text as it is generated.
+    /// providing real-time output from the LLM.
     ///
+    /// [`AgentStream`]: crate::streaming::AgentStream
     /// [`StreamEvent`]: crate::types::stream::StreamEvent
     #[must_use]
     pub fn stream(&self, input: &str) -> AgentStream {
-        crate::streaming::stream_agent(self, input.to_string(), "default".to_string())
+        self.stream_with_session(input, "default")
     }
 
     /// Run the agent and return a structured output.
@@ -364,6 +365,25 @@ impl Agent {
             "Structured output failed after {max_retries} retries. Last error: {last_error}"
         )))
     }
+
+    /// Internal stream implementation supporting custom session IDs.
+    pub(crate) fn stream_with_session(&self, input: &str, session_id: &str) -> AgentStream {
+        let runtime = crate::traits::strategy::AgentRuntime {
+            provider: Arc::clone(&self.provider),
+            tools: self.tools.clone(),
+            memory: Arc::clone(&self.memory),
+            guards: self.guards.clone(),
+            hints: self.hints.clone(),
+            tracker: Arc::clone(&self.tracker),
+            context_strategy: Arc::clone(&self.context_strategy),
+            execution_strategy: Arc::clone(&self.execution_strategy),
+            output_processor: Arc::clone(&self.output_processor),
+            config: self.config.clone(),
+            hooks: self.hooks.clone(),
+        };
+
+        self.strategy.stream(&runtime, input, session_id)
+    }
 }
 
 /// A session-scoped agent wrapper.
@@ -395,12 +415,12 @@ impl AgentSession<'_> {
             .await
     }
 
-    /// Stream a response within this session.
+    /// Execute the agent loop with a custom session ID, returning a stream.
     ///
     /// Equivalent to [`Agent::stream()`] but uses this session's ID for memory.
     #[must_use]
     pub fn stream(&self, input: &str) -> AgentStream {
-        crate::streaming::stream_agent(self.agent, input.to_string(), self.session_id.clone())
+        self.agent.stream_with_session(input, &self.session_id)
     }
 
     /// Get the session ID.

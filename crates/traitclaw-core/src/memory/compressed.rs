@@ -116,8 +116,9 @@ impl<M: Memory> Memory for CompressedMemory<M> {
         }
 
         // Separate system prompt (if present)
-        let (system_msgs, conversation): (Vec<_>, Vec<_>) =
-            all_messages.into_iter().partition(|m| m.role == MessageRole::System);
+        let (system_msgs, conversation): (Vec<_>, Vec<_>) = all_messages
+            .into_iter()
+            .partition(|m| m.role == MessageRole::System);
 
         if conversation.len() <= self.keep_recent {
             let mut result = system_msgs;
@@ -151,7 +152,8 @@ impl<M: Memory> Memory for CompressedMemory<M> {
         // Invalidate summary cache for this session
         {
             let mut cache = self.summaries.lock().unwrap_or_else(|e| e.into_inner());
-            cache.retain(|k, _| !k.starts_with(session_id));
+            let prefix = format!("{session_id}:");
+            cache.retain(|k, _| !k.starts_with(&prefix));
         }
         self.inner.append(session_id, message).await
     }
@@ -278,10 +280,7 @@ mod tests {
         let summary1 = msgs1[0].content.clone();
 
         // Add new message — should invalidate cache
-        memory
-            .append("s1", Message::user("msg 5"))
-            .await
-            .unwrap();
+        memory.append("s1", Message::user("msg 5")).await.unwrap();
 
         let msgs2 = memory.messages("s1").await.unwrap();
         // Summary should be different (more messages compressed)
@@ -327,7 +326,10 @@ mod tests {
 
         // Vietnamese text > 100 bytes (each Vietnamese char is 2-3 bytes)
         let long_vietnamese = "Xin chào! Đây là một tin nhắn rất dài bằng tiếng Việt để kiểm tra rằng việc cắt ngắn không gây lỗi panic khi gặp ký tự đa byte UTF-8.";
-        assert!(long_vietnamese.len() > 100, "test premise: string must be >100 bytes");
+        assert!(
+            long_vietnamese.len() > 100,
+            "test premise: string must be >100 bytes"
+        );
 
         for _ in 0..5 {
             memory
@@ -361,7 +363,10 @@ mod tests {
     async fn test_keep_recent_exceeds_message_count() {
         let memory = CompressedMemory::new(InMemoryMemory::new(), 0, 100);
 
-        memory.append("s1", Message::user("only one")).await.unwrap();
+        memory
+            .append("s1", Message::user("only one"))
+            .await
+            .unwrap();
 
         let msgs = memory.messages("s1").await.unwrap();
         // keep_recent (100) > message count (1) → no compression

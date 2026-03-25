@@ -44,11 +44,7 @@ fn main() {
         .add_role(AgentRole::new("writer", "Write content"))
         .add_role(AgentRole::new("editor", "Edit and polish"));
 
-    let mut state = TeamState::new(vec![
-        "researcher".into(),
-        "writer".into(),
-        "editor".into(),
-    ]);
+    let mut state = TeamState::new(vec!["researcher".into(), "writer".into(), "editor".into()]);
 
     let msg = TeamMessage::new("user", "Write an article about Rust");
     for i in 0..4 {

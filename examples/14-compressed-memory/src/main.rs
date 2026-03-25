@@ -20,13 +20,25 @@ async fn main() -> anyhow::Result<()> {
     // Simulate a conversation
     let conversation = [
         ("user", "What is Rust?"),
-        ("assistant", "Rust is a systems programming language focused on safety and performance."),
+        (
+            "assistant",
+            "Rust is a systems programming language focused on safety and performance.",
+        ),
         ("user", "What about ownership?"),
-        ("assistant", "Ownership is Rust's unique memory management system with three rules."),
+        (
+            "assistant",
+            "Ownership is Rust's unique memory management system with three rules.",
+        ),
         ("user", "Explain borrowing"),
-        ("assistant", "Borrowing lets you reference data without taking ownership."),
+        (
+            "assistant",
+            "Borrowing lets you reference data without taking ownership.",
+        ),
         ("user", "What about lifetimes?"),
-        ("assistant", "Lifetimes are annotations that tell the compiler how long references are valid."),
+        (
+            "assistant",
+            "Lifetimes are annotations that tell the compiler how long references are valid.",
+        ),
     ];
 
     for (i, (role, content)) in conversation.iter().enumerate() {
@@ -42,9 +54,15 @@ async fn main() -> anyhow::Result<()> {
         let returned = messages.len();
 
         if total_stored <= 5 {
-            println!("Message {}: stored={total_stored}, returned={returned} (no compression)", i + 1);
+            println!(
+                "Message {}: stored={total_stored}, returned={returned} (no compression)",
+                i + 1
+            );
         } else {
-            println!("Message {}: stored={total_stored}, returned={returned} ← COMPRESSED!", i + 1);
+            println!(
+                "Message {}: stored={total_stored}, returned={returned} ← COMPRESSED!",
+                i + 1
+            );
             // Show the summary
             if messages[0].content.contains("[Compressed") {
                 let preview = if messages[0].content.len() > 80 {

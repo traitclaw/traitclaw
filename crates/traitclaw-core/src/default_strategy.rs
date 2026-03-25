@@ -48,7 +48,15 @@ impl AgentStrategy for DefaultStrategy {
             state.token_budget = budget;
         }
 
-        let mut messages = load_context(runtime, session_id, input).await?;
+        let mut messages = match load_context(runtime, session_id, input).await {
+            Ok(msgs) => msgs,
+            Err(e) => {
+                for hook in &runtime.hooks {
+                    hook.on_error(&e).await;
+                }
+                return Err(e);
+            }
+        };
         let tool_schemas = runtime.tools.iter().map(|t| t.schema()).collect::<Vec<_>>();
 
         // === Agent Loop ===
@@ -78,7 +86,15 @@ impl AgentStrategy for DefaultStrategy {
             }
 
             let provider_start = Instant::now();
-            let response = runtime.provider.complete(request).await?;
+            let response = match runtime.provider.complete(request).await {
+                Ok(res) => res,
+                Err(e) => {
+                    for hook in &runtime.hooks {
+                        hook.on_error(&e).await;
+                    }
+                    return Err(e);
+                }
+            };
             let provider_duration = provider_start.elapsed();
 
             // Fire on_provider_end hooks
@@ -140,6 +156,18 @@ impl AgentStrategy for DefaultStrategy {
 
         Err(err)
     }
+
+    fn stream(
+        &self,
+        runtime: &AgentRuntime,
+        input: &str,
+        session_id: &str,
+    ) -> std::pin::Pin<
+        Box<dyn tokio_stream::Stream<Item = Result<crate::types::stream::StreamEvent>> + Send>,
+    > {
+        // Fire synchronous starting hooks if any (currently all hooks in v0.2.0 are async so we emit them inside the spawned stream task)
+        crate::streaming::stream_runtime(runtime.clone(), input.to_string(), session_id.to_string())
+    }
 }
 
 /// Load conversation context: history + system prompt + user message.
@@ -158,9 +186,7 @@ async fn load_context(
         });
 
     if let Some(ref system_prompt) = runtime.config.system_prompt {
-        if messages.is_empty()
-            || messages[0].role != crate::types::message::MessageRole::System
-        {
+        if messages.is_empty() || messages[0].role != crate::types::message::MessageRole::System {
             messages.insert(0, Message::system(system_prompt));
         }
     }
@@ -216,9 +242,15 @@ async fn process_tool_calls(
         let mut blocked = false;
 
         for hook in &runtime.hooks {
-            if let HookAction::Block(reason) = hook.before_tool_execute(&tc.name, &tc.arguments).await {
+            if let HookAction::Block(reason) =
+                hook.before_tool_execute(&tc.name, &tc.arguments).await
+            {
                 messages.push(Message::tool_result(&tc.id, &reason));
-                tracing::debug!(tool = tc.name.as_str(), reason = reason.as_str(), "Tool blocked by hook");
+                tracing::debug!(
+                    tool = tc.name.as_str(),
+                    reason = reason.as_str(),
+                    "Tool blocked by hook"
+                );
                 blocked = true;
                 break;
             }

@@ -3,7 +3,6 @@
 use tokio_stream::wrappers::ReceiverStream;
 use tokio_stream::StreamExt;
 
-use crate::agent::Agent;
 use crate::types::agent_state::AgentState;
 use crate::types::completion::CompletionRequest;
 use crate::types::message::{Message, MessageRole};
@@ -14,29 +13,31 @@ use crate::Result;
 pub type AgentStream =
     std::pin::Pin<Box<dyn tokio_stream::Stream<Item = Result<StreamEvent>> + Send>>;
 
-/// Run the agent and return a streaming response.
-pub(crate) fn stream_agent(agent: &Agent, input: String, session_id: String) -> AgentStream {
-    let provider = agent.provider.clone();
-    let memory = agent.memory.clone();
-    let tools = agent.tools.clone();
-    let hints = agent.hints.clone();
-    let config = agent.config.clone();
-
+/// Run the agent and return a streaming response via runtime.
+pub(crate) fn stream_runtime(
+    runtime: crate::traits::strategy::AgentRuntime,
+    input: String,
+    session_id: String,
+) -> AgentStream {
     let (tx, rx) = tokio::sync::mpsc::channel::<Result<StreamEvent>>(32);
 
     tokio::spawn(async move {
-        let model_info = provider.model_info();
+        for hook in &runtime.hooks {
+            hook.on_agent_start(&input).await;
+        }
 
-        // Memory load is non-fatal — start fresh on failure (P2 code review)
-        let mut messages = match memory.messages(&session_id).await {
+        let model_info = runtime.provider.model_info();
+
+        // Memory load is non-fatal — start fresh on failure
+        let mut messages = match runtime.memory.messages(&session_id).await {
             Ok(m) => m,
             Err(e) => {
-                tracing::warn!("Streaming: failed to load memory (continuing fresh): {e}");
+                tracing::warn!("Streaming: failed to load memory: {e}");
                 Vec::new()
             }
         };
 
-        if let Some(ref sys) = config.system_prompt {
+        if let Some(ref sys) = runtime.config.system_prompt {
             if messages.is_empty() || messages[0].role != MessageRole::System {
                 messages.insert(0, Message::system(sys));
             }
@@ -44,17 +45,15 @@ pub(crate) fn stream_agent(agent: &Agent, input: String, session_id: String) -> 
 
         let user_msg = Message::user(&input);
         messages.push(user_msg.clone());
-        // Memory append is non-fatal (P2 code review)
-        if let Err(e) = memory.append(&session_id, user_msg).await {
+        if let Err(e) = runtime.memory.append(&session_id, user_msg).await {
             tracing::warn!("Streaming: failed to save user message to memory: {e}");
         }
 
-        let tool_schemas = tools.iter().map(|t| t.schema()).collect::<Vec<_>>();
+        let tool_schemas = runtime.tools.iter().map(|t| t.schema()).collect::<Vec<_>>();
         let state = AgentState::new(model_info.tier, model_info.context_window);
 
-        for _iteration in 0..config.max_iterations {
-            // Inject hints
-            for hint in &hints {
+        for _iteration in 0..runtime.config.max_iterations {
+            for hint in &runtime.hints {
                 if hint.should_trigger(&state) {
                     let hm = hint.generate(&state);
                     messages.push(Message {
@@ -69,31 +68,38 @@ pub(crate) fn stream_agent(agent: &Agent, input: String, session_id: String) -> 
                 model: model_info.name.clone(),
                 messages: messages.clone(),
                 tools: tool_schemas.clone(),
-                max_tokens: config.max_tokens,
-                temperature: config.temperature,
+                max_tokens: runtime.config.max_tokens,
+                temperature: runtime.config.temperature,
                 response_format: None,
                 stream: true,
             };
 
-            let stream = match provider.stream(request).await {
+            for hook in &runtime.hooks {
+                hook.on_provider_start(&request).await;
+            }
+
+            let stream = match runtime.provider.stream(request).await {
                 Ok(s) => s,
                 Err(e) => {
+                    for hook in &runtime.hooks {
+                        hook.on_error(&e).await;
+                    }
                     let _ = tx.send(Err(e)).await;
                     return;
                 }
             };
 
-            let done = forward_stream(stream, &tx, &session_id, &memory).await;
+            let done = forward_stream(stream, &tx, &session_id, &runtime.memory).await;
             if done {
                 return;
             }
         }
 
-        let _ = tx
-            .send(Err(crate::Error::Runtime(
-                "Agent reached maximum iterations".into(),
-            )))
-            .await;
+        let err = crate::Error::Runtime("Agent reached maximum iterations".into());
+        for hook in &runtime.hooks {
+            hook.on_error(&err).await;
+        }
+        let _ = tx.send(Err(err)).await;
     });
 
     Box::pin(ReceiverStream::new(rx))

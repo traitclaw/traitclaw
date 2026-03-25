@@ -52,6 +52,7 @@ use crate::Result;
 ///
 /// Exposes all agent components needed to execute a reasoning loop,
 /// without exposing the strategy itself (avoiding recursion).
+#[derive(Clone)]
 pub struct AgentRuntime {
     /// The LLM provider.
     pub provider: Arc<dyn Provider>,
@@ -97,6 +98,26 @@ pub trait AgentStrategy: Send + Sync + 'static {
         input: &str,
         session_id: &str,
     ) -> Result<AgentOutput>;
+
+    /// Execute the agent reasoning loop and return a streaming response.
+    ///
+    /// Not all strategies support streaming natively. The default implementation
+    /// returns an error indicating streaming is not supported. Custom strategies
+    /// must opt-in by implementing this method.
+    fn stream(
+        &self,
+        _runtime: &AgentRuntime,
+        _input: &str,
+        _session_id: &str,
+    ) -> std::pin::Pin<
+        Box<dyn tokio_stream::Stream<Item = Result<crate::types::stream::StreamEvent>> + Send>,
+    > {
+        let (tx, rx) = tokio::sync::mpsc::channel(1);
+        let _ = tx.try_send(Err(crate::Error::Runtime(
+            "Streaming is not supported by this AgentStrategy".into(),
+        )));
+        Box::pin(tokio_stream::wrappers::ReceiverStream::new(rx))
+    }
 }
 
 #[cfg(test)]

@@ -88,22 +88,12 @@ pub trait AgentHook: Send + Sync + 'static {
     ///
     /// Return [`HookAction::Block`] to prevent execution. The block
     /// reason is returned to the LLM as the tool result.
-    async fn before_tool_execute(
-        &self,
-        _name: &str,
-        _args: &serde_json::Value,
-    ) -> HookAction {
+    async fn before_tool_execute(&self, _name: &str, _args: &serde_json::Value) -> HookAction {
         HookAction::Continue
     }
 
     /// Called after a tool finishes executing.
-    async fn after_tool_execute(
-        &self,
-        _name: &str,
-        _result: &str,
-        _duration: Duration,
-    ) {
-    }
+    async fn after_tool_execute(&self, _name: &str, _result: &str, _duration: Duration) {}
 
     /// Called for each streaming chunk received.
     async fn on_stream_chunk(&self, _chunk: &str) {}
