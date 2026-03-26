@@ -38,7 +38,9 @@ pub mod config;
 pub mod context_managers;
 pub mod default_strategy;
 pub mod error;
+pub mod factory;
 pub mod memory;
+pub mod pool;
 pub mod registries;
 pub mod retry;
 pub(crate) mod runtime;
@@ -106,6 +108,8 @@ pub use memory::in_memory::InMemoryMemory;
 // Re-export agent
 pub use agent::{Agent, AgentOutput, AgentOutputContent, AgentSession, RunUsage};
 pub use agent_builder::AgentBuilder;
+pub use factory::AgentFactory;
+pub use pool::AgentPool;
 
 /// Prelude module for convenient imports.
 ///
@@ -158,6 +162,10 @@ pub mod prelude {
 
     pub use crate::agent::{Agent, AgentOutput, AgentOutputContent, AgentSession, RunUsage};
     pub use crate::agent_builder::AgentBuilder;
+
+    // v0.6.0: Composition APIs
+    pub use crate::factory::AgentFactory;
+    pub use crate::pool::AgentPool;
 
     // v0.2.0: Strategy & Hook
     pub use crate::default_strategy::DefaultStrategy;

@@ -97,6 +97,16 @@ impl AgentBuilder {
         self
     }
 
+    /// Set the LLM provider from a pre-wrapped `Arc<dyn Provider>`.
+    ///
+    /// Use this when you already hold a shared provider reference
+    /// (e.g., from [`AgentFactory`](crate::factory::AgentFactory)).
+    #[must_use]
+    pub fn provider_arc(mut self, provider: Arc<dyn Provider>) -> Self {
+        self.provider = Some(provider);
+        self
+    }
+
     /// Set the LLM provider — preferred alias for [`.provider()`][Self::provider].
     ///
     /// Enables the idiomatic `Agent::builder().model(provider).system("...").build()` pattern.

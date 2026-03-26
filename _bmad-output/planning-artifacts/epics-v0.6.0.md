@@ -1,5 +1,5 @@
 ---
-stepsCompleted: ["step-01-validate-prerequisites.md", "step-02-design-epics.md"]
+stepsCompleted: ["step-01-validate-prerequisites.md", "step-02-design-epics.md", "step-03-create-stories.md", "step-04-final-validation.md"]
 inputDocuments: ["prd-v0.6.0.md", "architecture.md"]
 ---
 

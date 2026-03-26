@@ -20,7 +20,7 @@
 #   - done: Story completed
 
 generated: 2026-03-24T00:47:00+07:00
-last_updated: 2026-03-25T23:13:00+07:00
+last_updated: 2026-03-26T14:08:00+07:00
 project: traitclaw
 project_key: NOKEY
 tracking_system: file-system
@@ -187,3 +187,40 @@ development_status:
   23-2-rag-pipeline-example: done
   23-3-multi-agent-team-example: done
   23-4-eval-runner-example: done
+
+  # ==========================================================================
+  # v0.6.0 — Composition
+  # ==========================================================================
+
+  # === Epic 1: Single-Agent Ergonomics ===
+  epic-1-v060: done
+  1-1-agent-with-system: review
+  1-2-reexport-agent-with-system: review
+
+  # === Epic 2: Factory-Powered Multi-Agent Creation ===
+  epic-2-v060: done
+  2-1-agent-factory-new-spawn: review
+  2-2-agent-factory-spawn-with: review
+  2-3-reexport-agent-factory: review
+
+  # === Epic 3: Agent Pool & Team Execution ===
+  epic-3-v060: done
+  3-1-agent-pool-new: review
+  3-2-agent-pool-run-sequential: review
+  3-3-agent-pool-from-team: review
+  3-4-reexport-agent-pool: review
+
+  # === Epic 4: Multi-Turn Group Chat ===
+  epic-4-v060: done
+  4-1-group-chat-struct: review
+  4-2-group-chat-run: review
+  4-3-group-chat-max-rounds: review
+  4-4-group-chat-termination: review
+  4-5-reexport-group-chat: review
+
+  # === Epic 5: Documentation, Examples & Release ===
+  epic-5-v060: done
+  5-1-agent-factory-example: review
+  5-2-migration-guide: review
+  5-3-readme-multi-agent: review
+  5-4-backward-compatibility: review

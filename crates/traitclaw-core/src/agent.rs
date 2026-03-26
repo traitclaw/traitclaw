@@ -163,6 +163,43 @@ impl Agent {
         AgentBuilder::new()
     }
 
+    /// Create an agent with just a provider and system prompt.
+    ///
+    /// This is a convenience shorthand equivalent to:
+    /// ```rust,ignore
+    /// Agent::builder()
+    ///     .provider(provider)
+    ///     .system(system)
+    ///     .build()
+    ///     .unwrap()
+    /// ```
+    ///
+    /// All other settings use their defaults (in-memory memory, no tools,
+    /// no guards, etc.). Use [`Agent::builder()`] for full customization.
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// use traitclaw_core::prelude::*;
+    ///
+    /// # fn example(provider: impl traitclaw_core::traits::provider::Provider) {
+    /// let agent = Agent::with_system(provider, "You are a helpful assistant.");
+    /// # }
+    /// ```
+    /// # Panics
+    ///
+    /// This method cannot panic under normal usage — the internal `build()`
+    /// call only fails when no provider is set, and `with_system` always
+    /// provides one.
+    #[must_use]
+    pub fn with_system(provider: impl Provider, system: impl Into<String>) -> Self {
+        Agent::builder()
+            .provider(provider)
+            .system(system)
+            .build()
+            .expect("Agent::with_system is infallible: provider is always set")
+    }
+
     /// Create an agent directly (prefer using `builder()`).
     #[allow(clippy::too_many_arguments)]
     pub(crate) fn new(
@@ -530,5 +567,82 @@ mod tests {
         assert_eq!(out.usage.tokens, 100);
         assert_eq!(out.usage.iterations, 5);
         assert_eq!(out.usage.duration.as_millis(), 500);
+    }
+
+    // --- Agent::with_system() tests (Story 1.1) ---
+
+    use crate::types::completion::{CompletionRequest, CompletionResponse, ResponseContent, Usage};
+    use crate::types::model_info::{ModelInfo, ModelTier};
+    use crate::types::stream::CompletionStream;
+    use async_trait::async_trait;
+
+    struct MockProvider {
+        info: ModelInfo,
+    }
+
+    impl MockProvider {
+        fn new() -> Self {
+            Self {
+                info: ModelInfo::new("mock", ModelTier::Small, 4_096, false, false, false),
+            }
+        }
+    }
+
+    #[async_trait]
+    impl crate::traits::provider::Provider for MockProvider {
+        async fn complete(&self, _req: CompletionRequest) -> crate::Result<CompletionResponse> {
+            Ok(CompletionResponse {
+                content: ResponseContent::Text("ok".into()),
+                usage: Usage {
+                    prompt_tokens: 1,
+                    completion_tokens: 1,
+                    total_tokens: 2,
+                },
+            })
+        }
+        async fn stream(&self, _req: CompletionRequest) -> crate::Result<CompletionStream> {
+            unimplemented!()
+        }
+        fn model_info(&self) -> &ModelInfo {
+            &self.info
+        }
+    }
+
+    #[test]
+    fn test_with_system_str_prompt() {
+        // AC #1, #2: with_system accepts &str and creates a valid agent
+        let agent = Agent::with_system(MockProvider::new(), "You are helpful.");
+        assert_eq!(
+            agent.config.system_prompt.as_deref(),
+            Some("You are helpful.")
+        );
+    }
+
+    #[test]
+    fn test_with_system_string_prompt() {
+        // AC #2: with_system accepts String
+        let prompt = String::from("You are a researcher.");
+        let agent = Agent::with_system(MockProvider::new(), prompt);
+        assert_eq!(
+            agent.config.system_prompt.as_deref(),
+            Some("You are a researcher.")
+        );
+    }
+
+    #[test]
+    fn test_with_system_builder_unchanged() {
+        // AC #3: builder API is unchanged (still works)
+        let result = Agent::builder()
+            .provider(MockProvider::new())
+            .system("test")
+            .build();
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_with_system_provider_configured() {
+        // AC #4: agent has correct provider
+        let agent = Agent::with_system(MockProvider::new(), "test");
+        assert_eq!(agent.provider.model_info().name, "mock");
     }
 }

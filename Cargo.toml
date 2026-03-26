@@ -33,6 +33,7 @@ members = [
     "examples/21-rag-pipeline",
     "examples/22-multi-agent-team",
     "examples/23-eval-runner",
+    "examples/24-agent-factory",
     "showcase/miniclaw",
 ]
 
