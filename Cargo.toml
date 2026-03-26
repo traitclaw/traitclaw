@@ -38,7 +38,7 @@ members = [
 ]
 
 [workspace.package]
-version = "0.1.0"
+version = "0.6.0"
 edition = "2021"
 rust-version = "1.75"
 license = "MIT OR Apache-2.0"
@@ -69,14 +69,14 @@ quote = "1"
 proc-macro2 = "1"
 
 # Workspace crates
-traitclaw-core = { path = "crates/traitclaw-core", version = "0.1.0" }
-traitclaw-macros = { path = "crates/traitclaw-macros", version = "0.1.0" }
-traitclaw-openai-compat = { path = "crates/traitclaw-openai-compat", version = "0.1.0" }
-traitclaw-anthropic = { path = "crates/traitclaw-anthropic", version = "0.1.0" }
-traitclaw-openai = { path = "crates/traitclaw-openai", version = "0.1.0" }
-traitclaw-steering = { path = "crates/traitclaw-steering", version = "0.1.0" }
-traitclaw-memory-sqlite = { path = "crates/traitclaw-memory-sqlite", version = "0.1.0" }
-traitclaw-mcp = { path = "crates/traitclaw-mcp", version = "0.1.0" }
-traitclaw-rag = { path = "crates/traitclaw-rag", version = "0.1.0" }
-traitclaw-team = { path = "crates/traitclaw-team", version = "0.1.0" }
-traitclaw-eval = { path = "crates/traitclaw-eval", version = "0.1.0" }
+traitclaw-core = { path = "crates/traitclaw-core", version = "0.6.0" }
+traitclaw-macros = { path = "crates/traitclaw-macros", version = "0.6.0" }
+traitclaw-openai-compat = { path = "crates/traitclaw-openai-compat", version = "0.6.0" }
+traitclaw-anthropic = { path = "crates/traitclaw-anthropic", version = "0.6.0" }
+traitclaw-openai = { path = "crates/traitclaw-openai", version = "0.6.0" }
+traitclaw-steering = { path = "crates/traitclaw-steering", version = "0.6.0" }
+traitclaw-memory-sqlite = { path = "crates/traitclaw-memory-sqlite", version = "0.6.0" }
+traitclaw-mcp = { path = "crates/traitclaw-mcp", version = "0.6.0" }
+traitclaw-rag = { path = "crates/traitclaw-rag", version = "0.6.0" }
+traitclaw-team = { path = "crates/traitclaw-team", version = "0.6.0" }
+traitclaw-eval = { path = "crates/traitclaw-eval", version = "0.6.0" }
