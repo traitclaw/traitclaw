@@ -24,3 +24,7 @@ tiktoken = ["dep:tiktoken-rs"]
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["test-util", "macros"] }
+traitclaw-test-utils = { path = "../traitclaw-test-utils" }
+
+[lints]
+workspace = true

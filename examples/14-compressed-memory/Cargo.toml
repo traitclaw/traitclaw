@@ -8,3 +8,6 @@ publish = false
 traitclaw-core = { path = "../../crates/traitclaw-core" }
 tokio = { version = "1", features = ["full"] }
 anyhow = "1"
+
+[lints]
+workspace = true

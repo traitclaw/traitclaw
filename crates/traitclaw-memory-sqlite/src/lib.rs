@@ -11,11 +11,8 @@
 //! let memory = SqliteMemory::new("./agent.db").expect("Failed to open database");
 //! ```
 
-#![deny(warnings)]
 #![deny(missing_docs)]
-#![warn(clippy::pedantic)]
-#![allow(clippy::module_name_repetitions)]
-#![allow(clippy::doc_markdown)] // proper noun: SQLite
+#![allow(clippy::redundant_closure)]
 
 use std::sync::Mutex;
 

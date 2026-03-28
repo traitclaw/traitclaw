@@ -26,7 +26,6 @@
 //! | `strategies` | `traitclaw-strategies` | ❌ |
 //! | `full` | all of the above | ❌ |
 
-#![deny(warnings)]
 #![deny(missing_docs)]
 
 // Re-export everything from traitclaw-core

@@ -73,7 +73,7 @@ impl AgentOutput {
     /// Get the text content if this is a text output.
     ///
     /// Returns an empty string for `Structured` and `Error` variants.
-    /// Use [`structured()`](Self::structured) or [`Display`] for those.
+    /// Use [`structured()`](Self::structured) or `Display` for those.
     #[must_use]
     pub fn text(&self) -> &str {
         match &self.content {
@@ -292,6 +292,15 @@ impl Agent {
         }
     }
 
+    /// Returns a reference to the agent's memory store.
+    ///
+    /// Useful for inspecting conversation history in tests or building
+    /// custom conversation management on top of the agent.
+    #[must_use]
+    pub fn memory(&self) -> &dyn Memory {
+        &*self.memory
+    }
+
     /// Run the agent with user input and return the final output.
     ///
     /// This uses the `"default"` session for backward compatibility.
@@ -310,11 +319,8 @@ impl Agent {
     ///
     /// This uses the `"default"` session for backward compatibility.
     ///
-    /// Returns an [`AgentStream`] that yields [`StreamEvent`]s incrementally,
+    /// Returns an `AgentStream` that yields `StreamEvent`s incrementally,
     /// providing real-time output from the LLM.
-    ///
-    /// [`AgentStream`]: crate::streaming::AgentStream
-    /// [`StreamEvent`]: crate::types::stream::StreamEvent
     #[must_use]
     pub fn stream(&self, input: &str) -> AgentStream {
         self.stream_with_session(input, "default")

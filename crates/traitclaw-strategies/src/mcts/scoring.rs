@@ -58,7 +58,7 @@ mod tests {
                 }
             },
         );
-        assert_eq!(scorer("correct answer"), 1.0);
-        assert_eq!(scorer("wrong answer"), 0.0);
+        assert!((scorer("correct answer") - 1.0).abs() < f64::EPSILON);
+        assert!((scorer("wrong answer")).abs() < f64::EPSILON);
     }
 }

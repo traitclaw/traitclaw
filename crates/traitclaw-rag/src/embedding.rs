@@ -393,7 +393,7 @@ mod tests {
     fn test_cosine_similarity_zero_vector() {
         let a = vec![0.0, 0.0];
         let b = vec![1.0, 0.0];
-        assert_eq!(cosine_similarity(&a, &b), 0.0);
+        assert!(cosine_similarity(&a, &b).abs() < f64::EPSILON);
     }
 
     #[test]

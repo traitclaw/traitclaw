@@ -18,10 +18,8 @@
 //! assert_eq!(team.roles().len(), 2);
 //! ```
 
-#![deny(warnings)]
 #![deny(missing_docs)]
-#![warn(clippy::pedantic)]
-#![allow(clippy::module_name_repetitions)]
+#![allow(clippy::redundant_closure)]
 
 pub mod conditional_router;
 pub mod execution;

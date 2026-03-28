@@ -142,8 +142,8 @@ impl ToolRegistry for DynamicRegistry {
 /// A tool registry that organizes tools into **named groups** with group-level
 /// activation and deactivation.
 ///
-/// Only tools in *active* groups are returned by [`get_tools()`], while
-/// [`find_tool()`] searches **all** groups (active or not) to ensure tool
+/// Only tools in *active* groups are returned by `get_tools()`, while
+/// `find_tool()` searches **all** groups (active or not) to ensure tool
 /// execution is always possible even for deactivated groups.
 ///
 /// Uses `RwLock` for interior mutability — group switching is safe from `&self`.
@@ -188,7 +188,7 @@ impl GroupedRegistry {
     /// Add a named group of tools.
     ///
     /// Tools are provided as `Arc<dyn ErasedTool>`. The group is **not**
-    /// activated automatically — call [`activate()`] to enable it.
+    /// activated automatically — call `activate()` to enable it.
     ///
     /// If a group with the same name already exists, it is replaced.
     #[must_use]
@@ -200,7 +200,7 @@ impl GroupedRegistry {
         self
     }
 
-    /// Activate a group, making its tools visible via [`get_tools()`].
+    /// Activate a group, making its tools visible via `get_tools()`.
     ///
     /// Multiple groups can be active simultaneously.
     /// Activating an already-active group is a no-op.
@@ -339,14 +339,14 @@ impl ToolRegistry for GroupedRegistry {
 
 /// Per-tier tool limits.
 ///
-/// Defines how many tools are visible for each [`ModelTier`].
+/// Defines how many tools are visible for each model tier.
 #[derive(Debug, Clone, Copy)]
 pub struct TierLimits {
-    /// Max tools for [`ModelTier::Small`].
+    /// Max tools for small models.
     pub small: usize,
-    /// Max tools for [`ModelTier::Medium`].
+    /// Max tools for medium models.
     pub medium: usize,
-    /// Max tools for [`ModelTier::Large`].
+    /// Max tools for large models.
     pub large: usize,
 }
 
@@ -361,7 +361,7 @@ impl Default for TierLimits {
 }
 
 /// A tool registry that **automatically limits** the number of visible
-/// tools based on the configured [`ModelTier`].
+/// tools based on the configured model tier.
 ///
 /// Small models get fewer tools (to fit smaller context windows),
 /// while large models get access to all registered tools.
@@ -369,7 +369,7 @@ impl Default for TierLimits {
 /// Tool **priority** is determined by insertion order — tools registered
 /// first are selected first when the limit is applied.
 ///
-/// [`find_tool()`] searches all tools regardless of tier limit, ensuring
+/// `find_tool()` searches all tools regardless of tier limit, ensuring
 /// tool execution always works even for tools beyond the active limit.
 ///
 /// # Example
@@ -446,7 +446,7 @@ impl AdaptiveRegistry {
 }
 
 impl ToolRegistry for AdaptiveRegistry {
-    /// Returns at most `limit` tools based on the configured [`ModelTier`].
+    /// Returns at most `limit` tools based on the configured `ModelTier`.
     ///
     /// Tools are returned in insertion order (first registered = highest priority).
     fn get_tools(&self) -> Vec<Arc<dyn ErasedTool>> {

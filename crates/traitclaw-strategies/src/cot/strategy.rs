@@ -208,7 +208,7 @@ impl ChainOfThoughtStrategy {
             let trimmed = line.trim();
             if trimmed.starts_with("Step ") && trimmed.contains(':') {
                 // Extract content after "Step N:"
-                if let Some(content) = trimmed.splitn(2, ':').nth(1) {
+                if let Some((_, content)) = trimmed.split_once(':') {
                     steps.push(ThoughtStep::Think {
                         content: content.trim().to_string(),
                     });
@@ -276,7 +276,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_execute_text_response() {
-        use crate::test_utils::{make_runtime, MockProvider};
+        use traitclaw_test_utils::provider::MockProvider;
+        use traitclaw_test_utils::runtime::make_runtime;
 
         let provider =
             MockProvider::text("Step 1: Think about it.\nStep 2: Evaluate.\nFinal Answer: 42");
@@ -298,8 +299,9 @@ mod tests {
 
     #[tokio::test]
     async fn test_execute_unexpected_tool_calls() {
-        use crate::test_utils::{make_runtime, MockProvider};
         use traitclaw_core::types::tool_call::ToolCall;
+        use traitclaw_test_utils::provider::MockProvider;
+        use traitclaw_test_utils::runtime::make_runtime;
 
         let tc = ToolCall {
             id: "call_1".to_string(),

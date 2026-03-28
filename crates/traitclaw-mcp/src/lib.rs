@@ -2,7 +2,7 @@
 //!
 //! Connects to MCP servers over stdio or SSE transport, discovers tools via
 //! `tools/list`, and routes tool calls via `tools/call`. MCP tools implement
-//! [`ErasedTool`] so they work seamlessly alongside native tools.
+//! `ErasedTool` so they work seamlessly alongside native tools.
 //!
 //! # Quick Start
 //!
@@ -16,10 +16,8 @@
 //! # }
 //! ```
 
-#![deny(warnings)]
 #![deny(missing_docs)]
-#![warn(clippy::pedantic)]
-#![allow(clippy::module_name_repetitions)]
+#![allow(clippy::redundant_closure)]
 
 mod multi_server;
 mod protocol;

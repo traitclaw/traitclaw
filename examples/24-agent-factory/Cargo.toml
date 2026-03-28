@@ -11,3 +11,6 @@ traitclaw-team = { path = "../../crates/traitclaw-team" }
 tokio = { version = "1", features = ["full"] }
 async-trait = "0.1"
 anyhow = "1"
+
+[lints]
+workspace = true

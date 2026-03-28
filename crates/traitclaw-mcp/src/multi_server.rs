@@ -289,6 +289,7 @@ mod tests {
         Arc::new(Fake(name.to_string()))
     }
 
+    #[allow(clippy::type_complexity)]
     fn make_registry(
         servers: Vec<(String, Vec<Arc<dyn ErasedTool>>, bool)>,
         prefix: bool,

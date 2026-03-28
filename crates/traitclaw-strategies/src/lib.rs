@@ -23,9 +23,6 @@
 pub mod common;
 pub mod streaming;
 
-#[cfg(test)]
-pub(crate) mod test_utils;
-
 #[cfg(feature = "react")]
 pub mod react;
 

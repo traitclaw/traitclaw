@@ -411,7 +411,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_execute_selects_best_branch() {
-        use crate::test_utils::{make_runtime, MockProvider};
+        use traitclaw_test_utils::provider::MockProvider;
+        use traitclaw_test_utils::runtime::make_runtime;
 
         // All branches get same text, scoring differentiates by length
         let provider = MockProvider::text("Branch answer with enough content to score well.");
@@ -444,44 +445,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_execute_all_branches_fail() {
-        use crate::test_utils::make_runtime;
+        use traitclaw_test_utils::provider::MockProvider;
+        use traitclaw_test_utils::runtime::make_runtime;
 
-        // Provider that returns errors
-        struct FailProvider {
-            info: traitclaw_core::types::model_info::ModelInfo,
-        }
-
-        #[async_trait::async_trait]
-        impl traitclaw_core::Provider for FailProvider {
-            async fn complete(
-                &self,
-                _req: traitclaw_core::types::completion::CompletionRequest,
-            ) -> traitclaw_core::Result<traitclaw_core::types::completion::CompletionResponse>
-            {
-                Err(traitclaw_core::Error::Runtime("provider failed".into()))
-            }
-            async fn stream(
-                &self,
-                _req: traitclaw_core::types::completion::CompletionRequest,
-            ) -> traitclaw_core::Result<traitclaw_core::types::stream::CompletionStream>
-            {
-                unimplemented!()
-            }
-            fn model_info(&self) -> &traitclaw_core::types::model_info::ModelInfo {
-                &self.info
-            }
-        }
-
-        let provider = FailProvider {
-            info: traitclaw_core::types::model_info::ModelInfo::new(
-                "fail-model",
-                traitclaw_core::types::model_info::ModelTier::Small,
-                4096,
-                false,
-                false,
-                false,
-            ),
-        };
+        let provider = MockProvider::error("provider failed");
         let runtime = make_runtime(provider, vec![]);
 
         let strategy = MctsStrategy::builder().branches(2).build().unwrap();
@@ -499,8 +466,9 @@ mod tests {
 
     #[tokio::test]
     async fn test_execute_unexpected_tool_calls() {
-        use crate::test_utils::{make_runtime, MockProvider};
         use traitclaw_core::types::tool_call::ToolCall;
+        use traitclaw_test_utils::provider::MockProvider;
+        use traitclaw_test_utils::runtime::make_runtime;
 
         let tc = ToolCall {
             id: "call_1".to_string(),

@@ -23,10 +23,8 @@
 //! # }
 //! ```
 
-#![deny(warnings)]
 #![deny(missing_docs)]
-#![warn(clippy::pedantic)]
-#![allow(clippy::module_name_repetitions)]
+#![allow(clippy::redundant_closure)]
 
 pub mod chunker;
 pub mod embedding;
@@ -126,7 +124,6 @@ impl KeywordRetriever {
     }
 
     /// Score a document against query terms using BM25-like TF scoring.
-    #[allow(clippy::cast_precision_loss)]
     fn score(query_terms: &[String], content: &str) -> f64 {
         let content_lower = content.to_lowercase();
         let words: Vec<&str> = content_lower.split_whitespace().collect();

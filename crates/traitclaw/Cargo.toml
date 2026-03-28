@@ -34,3 +34,6 @@ eval = ["dep:traitclaw-eval"]
 strategies = ["dep:traitclaw-strategies"]
 full = ["openai-compat", "macros", "steering", "sqlite", "mcp", "rag", "team", "eval", "tiktoken", "strategies"]
 tiktoken = ["traitclaw-core/tiktoken"]
+
+[lints]
+workspace = true

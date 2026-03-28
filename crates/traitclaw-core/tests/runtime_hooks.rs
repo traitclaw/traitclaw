@@ -1,13 +1,18 @@
 //! Hook integration tests — v0.2.0 lifecycle hooks and tool interception.
+//!
+//! Migrated from `src/runtime/tests_hooks.rs` to use shared test utilities.
 
 use std::sync::Arc;
 
 use async_trait::async_trait;
 
-use crate::agent::Agent;
-use crate::test_utils::{DangerousTool, EchoTool, SequenceProvider};
-use crate::types::completion::{CompletionRequest, CompletionResponse, ResponseContent, Usage};
-use crate::types::tool_call::ToolCall;
+use traitclaw_core::prelude::*;
+use traitclaw_core::types::completion::{
+    CompletionRequest, CompletionResponse, ResponseContent, Usage,
+};
+use traitclaw_core::types::tool_call::ToolCall;
+use traitclaw_test_utils::provider::MockProvider;
+use traitclaw_test_utils::tools::{DangerousTool, EchoTool};
 
 // === Security Hook ===
 
@@ -15,18 +20,18 @@ use crate::types::tool_call::ToolCall;
 struct SecurityHook;
 
 #[async_trait]
-impl crate::traits::hook::AgentHook for SecurityHook {
+impl traitclaw_core::traits::hook::AgentHook for SecurityHook {
     async fn before_tool_execute(
         &self,
         name: &str,
         _args: &serde_json::Value,
-    ) -> crate::traits::hook::HookAction {
+    ) -> traitclaw_core::traits::hook::HookAction {
         if name.contains("dangerous") {
-            crate::traits::hook::HookAction::Block(
+            traitclaw_core::traits::hook::HookAction::Block(
                 "Blocked by security policy: tool name contains 'dangerous'".into(),
             )
         } else {
-            crate::traits::hook::HookAction::Continue
+            traitclaw_core::traits::hook::HookAction::Continue
         }
     }
 }
@@ -62,7 +67,7 @@ async fn test_hook_blocks_tool_execution() {
     ];
 
     let agent = Agent::builder()
-        .model(SequenceProvider::with_responses(responses))
+        .model(MockProvider::sequence(responses))
         .system("You are a test bot")
         .tool(DangerousTool)
         .hook(SecurityHook)
@@ -103,7 +108,7 @@ async fn test_hook_allows_safe_tool_execution() {
     ];
 
     let agent = Agent::builder()
-        .model(SequenceProvider::with_responses(responses))
+        .model(MockProvider::sequence(responses))
         .system("You are a test bot")
         .tool(EchoTool)
         .hook(SecurityHook)
@@ -133,14 +138,14 @@ impl RecordingHook {
 }
 
 #[async_trait]
-impl crate::traits::hook::AgentHook for RecordingHook {
+impl traitclaw_core::traits::hook::AgentHook for RecordingHook {
     async fn on_agent_start(&self, _input: &str) {
         self.events.lock().unwrap().push("agent_start".into());
     }
 
     async fn on_agent_end(
         &self,
-        _output: &crate::agent::AgentOutput,
+        _output: &traitclaw_core::agent::AgentOutput,
         _duration: std::time::Duration,
     ) {
         self.events.lock().unwrap().push("agent_end".into());
@@ -165,7 +170,7 @@ async fn test_hook_lifecycle_order() {
     let hook = Arc::new(RecordingHook::new());
 
     let agent = Agent::builder()
-        .model(SequenceProvider::text("Hello"))
+        .model(MockProvider::text("Hello"))
         .system("test")
         .hook(Arc::clone(&hook))
         .build()

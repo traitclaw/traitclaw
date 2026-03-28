@@ -1,7 +1,7 @@
 //! Accurate tiktoken-based token counting.
 //!
 //! This module is only available when the `tiktoken` feature is enabled.
-//! It provides exact OpenAI-compatible BPE token counting via [`tiktoken-rs`].
+//! It provides exact OpenAI-compatible BPE token counting via `tiktoken-rs`.
 //!
 //! # Usage
 //!

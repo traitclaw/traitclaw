@@ -17,12 +17,9 @@
 //! let ollama = OpenAiCompatProvider::ollama("llama3.2");
 //! ```
 
-#![deny(warnings)]
 #![deny(missing_docs)]
-#![warn(clippy::pedantic)]
-#![allow(clippy::module_name_repetitions)]
+#![allow(clippy::redundant_closure)]
 // `OpenAI` is a proper noun, not a code identifier — suppress doc_markdown for this crate.
-#![allow(clippy::doc_markdown)]
 
 mod convert;
 mod provider;

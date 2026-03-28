@@ -20,7 +20,7 @@
 #   - done: Story completed
 
 generated: 2026-03-24T00:47:00+07:00
-last_updated: 2026-03-26T14:08:00+07:00
+last_updated: 2026-03-28T17:10:00+07:00
 project: traitclaw
 project_key: NOKEY
 tracking_system: file-system
@@ -194,33 +194,95 @@ development_status:
 
   # === Epic 1: Single-Agent Ergonomics ===
   epic-1-v060: done
-  1-1-agent-with-system: review
-  1-2-reexport-agent-with-system: review
+  1-1-agent-with-system: done
+  1-2-reexport-agent-with-system: done
 
   # === Epic 2: Factory-Powered Multi-Agent Creation ===
   epic-2-v060: done
-  2-1-agent-factory-new-spawn: review
-  2-2-agent-factory-spawn-with: review
-  2-3-reexport-agent-factory: review
+  2-1-agent-factory-new-spawn: done
+  2-2-agent-factory-spawn-with: done
+  2-3-reexport-agent-factory: done
 
   # === Epic 3: Agent Pool & Team Execution ===
   epic-3-v060: done
-  3-1-agent-pool-new: review
-  3-2-agent-pool-run-sequential: review
-  3-3-agent-pool-from-team: review
-  3-4-reexport-agent-pool: review
+  3-1-agent-pool-new: done
+  3-2-agent-pool-run-sequential: done
+  3-3-agent-pool-from-team: done
+  3-4-reexport-agent-pool: done
 
   # === Epic 4: Multi-Turn Group Chat ===
   epic-4-v060: done
-  4-1-group-chat-struct: review
-  4-2-group-chat-run: review
-  4-3-group-chat-max-rounds: review
-  4-4-group-chat-termination: review
-  4-5-reexport-group-chat: review
+  4-1-group-chat-struct: done
+  4-2-group-chat-run: done
+  4-3-group-chat-max-rounds: done
+  4-4-group-chat-termination: done
+  4-5-reexport-group-chat: done
 
   # === Epic 5: Documentation, Examples & Release ===
   epic-5-v060: done
-  5-1-agent-factory-example: review
-  5-2-migration-guide: review
-  5-3-readme-multi-agent: review
-  5-4-backward-compatibility: review
+  5-1-agent-factory-example: done
+  5-2-migration-guide: done
+  5-3-readme-multi-agent: done
+  5-4-backward-compatibility: done
+
+  # ==========================================================================
+  # v0.7.0 — Reasoning
+  # ==========================================================================
+
+  # === Epic 1: Strategy Crate Scaffolding ===
+  epic-1-v070: done
+  1-1-scaffold-strategies-crate: done
+  1-2-thoughtstep-enum: done
+  1-3-meta-crate-reexport: done
+
+  # === Epic 2: ReAct Strategy ===
+  epic-2-v070: done
+  2-1-react-strategy-builder: done
+  2-2-react-loop-execution: done
+  2-3-strategy-interchangeability: done
+
+  # === Epic 3: Chain of Thought Strategy ===
+  epic-3-v070: done
+  3-1-cot-strategy: done
+
+  # === Epic 4: MCTS Strategy ===
+  epic-4-v070: done
+  4-1-mcts-strategy-builder: done
+  4-2-mcts-parallel-evaluation: done
+
+  # === Epic 5: Streaming, Examples & NFR ===
+  epic-5-v070: done
+  5-1-streaming-output-transformer: done
+  5-2-streaming-react-integration: done
+  5-3-per-strategy-examples: done
+  5-4-backward-compatibility: done
+  5-5-rustdoc-migration-nfr: done
+
+  # ==========================================================================
+  # v0.8.0 — Quality Foundation
+  # ==========================================================================
+
+  # === Epic 1: Shared Test Infrastructure ===
+  epic-1-v080: done
+  1-1-create-test-utils-crate: done
+  1-2-implement-mock-provider: done
+  1-3-implement-mock-memory-and-tools: done
+  1-4-implement-make-runtime: done
+  1-5-migrate-existing-tests: done
+
+  # === Epic 2: Continuous Integration Pipeline ===
+  epic-2-v080: done
+  2-1-create-ci-workflow: done
+
+  # === Epic 3: Runtime Tracing & Observability (Streamlined) ===
+  # Removed: AgentEvent enum (3.2) — redundant with tracing spans
+  # Removed: on_event() callback (3.3) — users use tracing::Layer instead
+  # Removed: Epic 4 Cost Tracking — deferred, backends handle cost
+  epic-3-v080: done
+  3-1-add-tracing-spans: done
+
+  # === Epic 5: Documentation, Examples & Backward Compatibility ===
+  epic-5-v080: done
+  5-1-create-observability-example: done
+  5-2-migration-guide-and-compat: done
+

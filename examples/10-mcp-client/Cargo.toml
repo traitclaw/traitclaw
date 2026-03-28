@@ -10,3 +10,6 @@ traitclaw-mcp = { path = "../../crates/traitclaw-mcp" }
 traitclaw-openai-compat = { path = "../../crates/traitclaw-openai-compat" }
 tokio = { version = "1", features = ["full"] }
 anyhow = "1"
+
+[lints]
+workspace = true

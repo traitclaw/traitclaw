@@ -343,7 +343,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_execute_text_response() {
-        use crate::test_utils::{make_runtime, MockProvider};
+        use traitclaw_test_utils::provider::MockProvider;
+        use traitclaw_test_utils::runtime::make_runtime;
 
         let provider = MockProvider::text("The answer is 42.");
         let runtime = make_runtime(provider, vec![]);
@@ -367,8 +368,9 @@ mod tests {
 
     #[tokio::test]
     async fn test_execute_tool_call_then_answer() {
-        use crate::test_utils::{make_runtime, MockProvider};
         use traitclaw_core::types::tool_call::ToolCall;
+        use traitclaw_test_utils::provider::MockProvider;
+        use traitclaw_test_utils::runtime::make_runtime;
 
         let tool_call = ToolCall {
             id: "call_1".to_string(),
@@ -400,8 +402,9 @@ mod tests {
 
     #[tokio::test]
     async fn test_execute_max_iterations_exhausted() {
-        use crate::test_utils::{make_runtime, MockProvider};
         use traitclaw_core::types::tool_call::ToolCall;
+        use traitclaw_test_utils::provider::MockProvider;
+        use traitclaw_test_utils::runtime::make_runtime;
 
         // Provider always returns tool calls, never text
         let tc = ToolCall {

@@ -25,10 +25,8 @@
 //! let provider = StructuredOutputProvider::<Report>::new(openai("gpt-4o-mini"), "report");
 //! ```
 
-#![deny(warnings)]
 #![deny(missing_docs)]
-#![warn(clippy::pedantic)]
-#![allow(clippy::module_name_repetitions)]
+#![allow(clippy::redundant_closure)]
 #![allow(clippy::doc_markdown)] // proper nouns: OpenAI, Groq, etc.
 
 mod models;

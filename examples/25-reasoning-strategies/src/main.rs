@@ -28,15 +28,18 @@ use traitclaw_strategies::{
 // ── Example Tool ─────────────────────────────────────────────────────────
 
 #[derive(serde::Deserialize, schemars::JsonSchema)]
+#[allow(dead_code)]
 struct CalculateInput {
     expression: String,
 }
 
 #[derive(serde::Serialize)]
+#[allow(dead_code)]
 struct CalculateOutput {
     result: String,
 }
 
+#[allow(dead_code)]
 struct CalculateTool;
 
 #[async_trait]

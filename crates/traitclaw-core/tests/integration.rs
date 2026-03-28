@@ -11,61 +11,14 @@ use traitclaw_core::types::completion::{
     CompletionRequest, CompletionResponse, ResponseContent, Usage,
 };
 use traitclaw_core::types::model_info::{ModelInfo, ModelTier};
-use traitclaw_core::types::stream::{CompletionStream, StreamEvent};
-
-// ───────────── Mock Provider ─────────────
-
-struct MockProvider {
-    model_info: ModelInfo,
-    response: String,
-}
-
-impl MockProvider {
-    fn new(response: impl Into<String>) -> Self {
-        Self {
-            model_info: ModelInfo::new("mock", ModelTier::Small, 4_096, false, false, false),
-            response: response.into(),
-        }
-    }
-}
-
-#[async_trait]
-impl Provider for MockProvider {
-    async fn complete(
-        &self,
-        _req: CompletionRequest,
-    ) -> traitclaw_core::Result<CompletionResponse> {
-        Ok(CompletionResponse {
-            content: ResponseContent::Text(self.response.clone()),
-            usage: Usage {
-                prompt_tokens: 10,
-                completion_tokens: 5,
-                total_tokens: 15,
-            },
-        })
-    }
-
-    async fn stream(&self, _req: CompletionRequest) -> traitclaw_core::Result<CompletionStream> {
-        let (tx, rx) = tokio::sync::mpsc::channel(4);
-        let resp = self.response.clone();
-        tokio::spawn(async move {
-            let _ = tx.send(Ok(StreamEvent::TextDelta(resp))).await;
-            let _ = tx.send(Ok(StreamEvent::Done)).await;
-        });
-        Ok(Box::pin(tokio_stream::wrappers::ReceiverStream::new(rx)))
-    }
-
-    fn model_info(&self) -> &ModelInfo {
-        &self.model_info
-    }
-}
+use traitclaw_test_utils::provider::MockProvider;
 
 // ───────────── Tests ─────────────
 
 #[tokio::test]
 async fn test_simple_text_run() {
     let agent = Agent::builder()
-        .model(MockProvider::new("Hello, world!"))
+        .model(MockProvider::text("Hello, world!"))
         .system("You are helpful")
         .build()
         .unwrap();
@@ -85,7 +38,7 @@ async fn test_simple_text_run() {
 #[tokio::test]
 async fn test_session_isolation() {
     let agent = Agent::builder()
-        .model(MockProvider::new("response"))
+        .model(MockProvider::text("response"))
         .system("You are helpful")
         .build()
         .unwrap();
@@ -107,7 +60,7 @@ async fn test_session_isolation() {
 #[tokio::test]
 async fn test_session_auto_generates_unique_ids() {
     let agent = Agent::builder()
-        .model(MockProvider::new("ok"))
+        .model(MockProvider::text("ok"))
         .build()
         .unwrap();
 
@@ -120,7 +73,7 @@ async fn test_session_auto_generates_unique_ids() {
 #[tokio::test]
 async fn test_agent_display_format() {
     let agent = Agent::builder()
-        .model(MockProvider::new("formatted"))
+        .model(MockProvider::text("formatted"))
         .build()
         .unwrap();
 
@@ -131,7 +84,7 @@ async fn test_agent_display_format() {
 #[tokio::test]
 async fn test_agent_with_custom_config() {
     let agent = Agent::builder()
-        .model(MockProvider::new("configured"))
+        .model(MockProvider::text("configured"))
         .system("Custom system prompt")
         .max_iterations(5)
         .max_tokens(1024)
@@ -286,7 +239,7 @@ async fn test_builder_with_context_manager() {
     }
 
     let agent = Agent::builder()
-        .model(MockProvider::new("with context manager"))
+        .model(MockProvider::text("with context manager"))
         .context_manager(PassthroughManager)
         .build()
         .unwrap();
@@ -301,7 +254,7 @@ async fn test_builder_with_output_transformer() {
     use traitclaw_core::BudgetAwareTruncator;
 
     let agent = Agent::builder()
-        .model(MockProvider::new("with transformer"))
+        .model(MockProvider::text("with transformer"))
         .output_transformer(BudgetAwareTruncator::new(5000, 0.8))
         .build()
         .unwrap();
@@ -350,7 +303,7 @@ async fn test_builder_all_v030_traits() {
     }
 
     let agent = Agent::builder()
-        .model(MockProvider::new("all v0.3.0"))
+        .model(MockProvider::text("all v0.3.0"))
         .context_manager(CustomManager)
         .output_transformer(BudgetAwareTruncator::default())
         .tool_registry(DynamicRegistry::new())

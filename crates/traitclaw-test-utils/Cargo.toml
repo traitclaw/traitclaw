@@ -1,0 +1,22 @@
+[package]
+name = "traitclaw-test-utils"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "Shared test utilities for the TraitClaw AI Agent Framework"
+
+[dependencies]
+traitclaw-core = { path = "../traitclaw-core" }
+async-trait = { workspace = true }
+tokio = { workspace = true }
+serde_json = { workspace = true }
+serde = { workspace = true }
+schemars = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["test-util", "macros"] }
+tokio-test = "0.4"
+
+[lints]
+workspace = true

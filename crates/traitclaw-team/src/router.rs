@@ -131,7 +131,7 @@ pub trait Router: Send + Sync + 'static {
 
 /// Routes messages round-robin through all agents in order.
 ///
-/// The first message goes to agents[0], the second to agents[1], etc.
+/// The first message goes to agents\[0\], the second to agents\[1\], etc.
 /// Completes after all agents have responded once.
 pub struct SequentialRouter;
 

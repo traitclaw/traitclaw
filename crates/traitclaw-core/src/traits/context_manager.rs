@@ -70,7 +70,7 @@ pub trait ContextManager: Send + Sync {
     /// Estimate the total token count for a message list.
     ///
     /// Default implementation uses the 4-characters ≈ 1-token approximation.
-    /// Override with [`TikTokenCounter`] for model-accurate counting.
+    /// Override with `TikTokenCounter` for model-accurate counting.
     fn estimate_tokens(&self, messages: &[Message]) -> usize {
         messages.iter().map(|m| m.content.len() / 4 + 1).sum()
     }

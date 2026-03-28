@@ -93,7 +93,7 @@ pub struct AgentRuntime {
 /// Pluggable agent execution strategy.
 ///
 /// Implement this trait to define a custom reasoning loop. The default
-/// implementation ([`DefaultStrategy`]) preserves the v0.1.0 behavior.
+/// implementation (`DefaultStrategy`) preserves the v0.1.0 behavior.
 ///
 /// # Object Safety
 ///

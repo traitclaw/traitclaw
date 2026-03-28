@@ -88,8 +88,24 @@ impl AgentStrategy for DefaultStrategy {
             }
 
             let provider_start = Instant::now();
-            let response = match runtime.provider.complete(request).await {
-                Ok(res) => res,
+            let llm_span = tracing::info_span!(
+                target: "traitclaw::llm",
+                "gen_ai.chat",
+                gen_ai.system = "traitclaw",
+                gen_ai.request.model = %model_info.name,
+                gen_ai.usage.input_tokens = tracing::field::Empty,
+                gen_ai.usage.output_tokens = tracing::field::Empty,
+            );
+            let _llm_guard = llm_span.enter();
+            let provider_result = runtime.provider.complete(request).await;
+            drop(_llm_guard);
+
+            let response = match provider_result {
+                Ok(res) => {
+                    llm_span.record("gen_ai.usage.input_tokens", res.usage.prompt_tokens);
+                    llm_span.record("gen_ai.usage.output_tokens", res.usage.completion_tokens);
+                    res
+                }
                 Err(e) => {
                     for hook in &runtime.hooks {
                         hook.on_error(&e).await;
@@ -213,7 +229,11 @@ fn inject_hints(runtime: &AgentRuntime, state: &AgentState, messages: &mut Vec<M
                 content: hint_msg.content,
                 tool_call_id: None,
             });
-            tracing::debug!(hint = hint.name(), "Hint injected");
+            tracing::debug!(
+                target: "traitclaw::hint",
+                hint_name = hint.name(),
+                "Hint injected"
+            );
         }
     }
 }

@@ -1,17 +1,19 @@
 //! Basic agent runtime tests — text responses, tool calls, memory, error handling.
 //!
 //! These tests verify core agent behaviors (AC-3 through AC-6).
+//! Migrated from `src/runtime/tests_basic.rs` to use shared test utilities.
 
-use crate::agent::Agent;
-use crate::test_utils::{EchoTool, SequenceProvider};
-use crate::types::completion::{CompletionResponse, ResponseContent, Usage};
-use crate::types::tool_call::ToolCall;
+use traitclaw_core::prelude::*;
+use traitclaw_core::types::completion::{CompletionResponse, ResponseContent, Usage};
+use traitclaw_core::types::tool_call::ToolCall;
+use traitclaw_test_utils::provider::MockProvider;
+use traitclaw_test_utils::tools::EchoTool;
 
 #[tokio::test]
 async fn test_simple_text_response_ac3() {
     // AC-3: text response → AgentOutput::Text
     let agent = Agent::builder()
-        .model(SequenceProvider::text("Hello, world!"))
+        .model(MockProvider::text("Hello, world!"))
         .system("You are a test bot")
         .build()
         .unwrap();
@@ -48,7 +50,7 @@ async fn test_tool_call_then_text_ac4_ac5() {
     ];
 
     let agent = Agent::builder()
-        .model(SequenceProvider::with_responses(responses))
+        .model(MockProvider::sequence(responses))
         .system("You are a test bot")
         .tool(EchoTool)
         .build()
@@ -75,7 +77,7 @@ async fn test_max_iterations_error_ac5() {
     };
 
     let agent = Agent::builder()
-        .model(SequenceProvider::with_responses(vec![tool_response]))
+        .model(MockProvider::sequence(vec![tool_response]))
         .system("You loop forever")
         .tool(EchoTool)
         .max_iterations(3)
@@ -92,14 +94,14 @@ async fn test_max_iterations_error_ac5() {
 async fn test_memory_saved_ac6() {
     // AC-6: conversation is saved to memory after completion
     let agent = Agent::builder()
-        .model(SequenceProvider::text("Saved!"))
+        .model(MockProvider::text("Saved!"))
         .system("You are a test bot")
         .build()
         .unwrap();
 
     agent.run("Remember this").await.unwrap();
 
-    let msgs = agent.memory.messages("default").await.unwrap();
+    let msgs = agent.memory().messages("default").await.unwrap();
     assert!(
         msgs.len() >= 2,
         "expected at least user + assistant messages"
@@ -135,7 +137,7 @@ async fn test_unknown_tool_returns_error_message() {
     ];
 
     let agent = Agent::builder()
-        .model(SequenceProvider::with_responses(responses))
+        .model(MockProvider::sequence(responses))
         .system("You are a test bot")
         .tool(EchoTool)
         .build()
@@ -172,7 +174,7 @@ async fn test_bad_tool_args_returns_error_message() {
     ];
 
     let agent = Agent::builder()
-        .model(SequenceProvider::with_responses(responses))
+        .model(MockProvider::sequence(responses))
         .system("You are a test bot")
         .tool(EchoTool)
         .build()

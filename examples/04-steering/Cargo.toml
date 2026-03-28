@@ -10,3 +10,6 @@ traitclaw-openai-compat = { path = "../../crates/traitclaw-openai-compat" }
 traitclaw-steering = { path = "../../crates/traitclaw-steering" }
 tokio = { version = "1", features = ["full"] }
 anyhow = "1"
+
+[lints]
+workspace = true

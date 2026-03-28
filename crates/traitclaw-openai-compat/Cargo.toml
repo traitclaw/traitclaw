@@ -16,3 +16,6 @@ tokio-stream = { workspace = true }
 async-trait = { workspace = true }
 tracing = { workspace = true }
 bytes = "1"
+
+[lints]
+workspace = true

@@ -21,12 +21,8 @@
 //! assert!(score > 0.0);
 //! ```
 
-#![deny(warnings)]
 #![deny(missing_docs)]
-#![warn(clippy::pedantic)]
-#![allow(clippy::module_name_repetitions)]
-#![allow(clippy::cast_precision_loss)] // usize→f64 for scoring is acceptable
-#![allow(clippy::doc_markdown)]
+#![allow(clippy::redundant_closure)]
 
 pub mod export;
 pub mod metrics;

@@ -24,10 +24,8 @@
 //! # }
 //! ```
 
-#![deny(warnings)]
 #![deny(missing_docs)]
-#![warn(clippy::pedantic)]
-#![allow(clippy::module_name_repetitions)]
+#![allow(clippy::redundant_closure)]
 
 pub mod traits;
 pub mod types;
@@ -48,9 +46,6 @@ pub(crate) mod streaming;
 pub mod token_counter;
 pub mod token_counting;
 pub mod transformers;
-
-#[cfg(test)]
-pub(crate) mod test_utils;
 
 // Re-export core traits at crate root
 pub use traits::context_manager::ContextManager;

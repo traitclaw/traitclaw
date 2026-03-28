@@ -16,10 +16,8 @@
 //! let tracker = AdaptiveTracker::for_tier(&ModelTier::Medium);
 //! ```
 
-#![deny(warnings)]
 #![deny(missing_docs)]
-#![warn(clippy::pedantic)]
-#![allow(clippy::module_name_repetitions)]
+#![allow(clippy::redundant_closure)]
 
 pub mod guards;
 pub mod hints;

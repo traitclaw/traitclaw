@@ -212,20 +212,39 @@ async fn execute_single(
     for guard in guards {
         let guard_name = guard.name().to_string();
         let action_ref = &action;
+
+        let guard_span = tracing::info_span!(
+            target: "traitclaw::guard",
+            "guard.check",
+            guard.name = guard_name.as_str(),
+            guard.result = tracing::field::Empty,
+        );
+        let _g = guard_span.enter();
+
         let result =
             std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| guard.check(action_ref)));
 
         match result {
-            Ok(GuardResult::Allow) => {}
+            Ok(GuardResult::Allow) => {
+                guard_span.record("guard.result", "allow");
+            }
             Ok(GuardResult::Deny { reason, .. }) => {
+                guard_span.record("guard.result", "deny");
                 return format!("Error: Action blocked by guard: {reason}");
             }
             Ok(GuardResult::Sanitize { warning, .. }) => {
-                tracing::info!(guard = guard_name.as_str(), "Guard sanitized: {warning}");
+                guard_span.record("guard.result", "sanitize");
+                tracing::info!(
+                    target: "traitclaw::guard",
+                    guard = guard_name.as_str(),
+                    "Guard sanitized: {warning}"
+                );
             }
             Err(_) => {
+                guard_span.record("guard.result", "panic");
                 // Guard panicked — default to Deny for safety (P3 code review)
                 tracing::warn!(
+                    target: "traitclaw::guard",
                     guard = guard_name.as_str(),
                     "Guard panicked — denying action for safety"
                 );
@@ -235,13 +254,28 @@ async fn execute_single(
     }
 
     // Find and execute tool
+    let tool_span = tracing::info_span!(
+        target: "traitclaw::tool",
+        "tool.call",
+        tool.name = call.name.as_str(),
+        tool.success = tracing::field::Empty,
+    );
+    let _t = tool_span.enter();
+
     if let Some(tool) = tools.iter().find(|t| t.name() == call.name) {
         match tool.execute_json(call.arguments.clone()).await {
-            Ok(output) => serde_json::to_string(&output)
-                .unwrap_or_else(|e| format!("Error serializing output: {e}")),
-            Err(e) => format!("Error executing tool: {e}"),
+            Ok(output) => {
+                tool_span.record("tool.success", true);
+                serde_json::to_string(&output)
+                    .unwrap_or_else(|e| format!("Error serializing output: {e}"))
+            }
+            Err(e) => {
+                tool_span.record("tool.success", false);
+                format!("Error executing tool: {e}")
+            }
         }
     } else {
+        tool_span.record("tool.success", false);
         let available: Vec<_> = tools.iter().map(|t| t.name().to_string()).collect();
         format!(
             "Error: Tool '{}' not found. Available: {}",

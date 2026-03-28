@@ -14,6 +14,7 @@ members = [
     "crates/traitclaw-team",
     "crates/traitclaw-eval",
     "crates/traitclaw-strategies",
+    "crates/traitclaw-test-utils",
     "examples/01-hello-agent",
     "examples/02-tool-calling",
     "examples/03-streaming",
@@ -36,6 +37,7 @@ members = [
     "examples/23-eval-runner",
     "examples/24-agent-factory",
     "examples/25-reasoning-strategies",
+    "examples/26-observability",
     "showcase/miniclaw",
 ]
 
@@ -83,3 +85,50 @@ traitclaw-rag = { path = "crates/traitclaw-rag", version = "0.6.0" }
 traitclaw-team = { path = "crates/traitclaw-team", version = "0.6.0" }
 traitclaw-eval = { path = "crates/traitclaw-eval", version = "0.6.0" }
 traitclaw-strategies = { path = "crates/traitclaw-strategies", version = "0.6.0" }
+
+# Workspace-wide lint configuration
+# Per-crate pedantic lints are advisory (warn); CI enforces default-level warnings via clippy -- -D warnings.
+# Pedantic-level lints from Rust 1.94+ are intentionally allowed until a dedicated cleanup story.
+[workspace.lints.clippy]
+pedantic = { level = "warn", priority = -1 }
+# --- Allowed pedantic lints (noisy or not applicable) ---
+module_name_repetitions = "allow"
+doc_markdown = "allow"
+missing_panics_doc = "allow"
+missing_errors_doc = "allow"
+must_use_candidate = "allow"
+semicolon_if_nothing_returned = "allow"
+redundant_closure = "allow"
+redundant_closure_for_method_calls = "allow"
+format_push_string = "allow"
+cast_precision_loss = "allow"
+cast_sign_loss = "allow"
+cast_possible_truncation = "allow"
+cast_lossless = "allow"
+match_wildcard_for_single_variants = "allow"
+manual_let_else = "allow"
+match_same_arms = "allow"
+if_not_else = "allow"
+manual_string_new = "allow"
+items_after_statements = "allow"
+uninlined_format_args = "allow"
+redundant_else = "allow"
+unnecessary_wraps = "allow"
+trivially_copy_pass_by_ref = "allow"
+map_unwrap_or = "allow"
+single_match_else = "allow"
+implicit_hasher = "allow"
+return_self_not_must_use = "allow"
+needless_pass_by_value = "allow"
+explicit_counter_loop = "allow"
+inefficient_to_string = "allow"
+int_plus_one = "allow"
+missing_fields_in_debug = "allow"
+too_many_lines = "allow"
+unnecessary_map_or = "allow"
+unused_async = "allow"
+write_literal = "allow"
+needless_borrows_for_generic_args = "allow"
+unnecessary_literal_bound = "allow"
+wildcard_imports = "allow"
+used_underscore_items = "allow"

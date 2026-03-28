@@ -1,9 +1,12 @@
 //! Guard integration tests — verify guards block tool execution.
+//!
+//! Migrated from `src/runtime/tests_guards.rs` to use shared test utilities.
 
-use crate::agent::Agent;
-use crate::test_utils::{DenyGuard, EchoTool, SequenceProvider};
-use crate::types::completion::{CompletionResponse, ResponseContent, Usage};
-use crate::types::tool_call::ToolCall;
+use traitclaw_core::prelude::*;
+use traitclaw_core::types::completion::{CompletionResponse, ResponseContent, Usage};
+use traitclaw_core::types::tool_call::ToolCall;
+use traitclaw_test_utils::provider::MockProvider;
+use traitclaw_test_utils::tools::{DenyGuard, EchoTool};
 
 #[tokio::test]
 async fn test_guard_deny_blocks_tool_ac7() {
@@ -32,7 +35,7 @@ async fn test_guard_deny_blocks_tool_ac7() {
     ];
 
     let agent = Agent::builder()
-        .model(SequenceProvider::with_responses(responses))
+        .model(MockProvider::sequence(responses))
         .system("You are a test bot")
         .tool(EchoTool)
         .guard(DenyGuard)
