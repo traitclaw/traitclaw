@@ -4,7 +4,16 @@ version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
+repository.workspace = true
 description = "Multi-agent orchestration for TraitClaw — teams, routing, delegation, and verification chains"
+readme = "README.md"
+documentation = "https://docs.rs/traitclaw-team"
+keywords = ["ai", "agent", "multi-agent", "team", "orchestration"]
+categories = ["api-bindings", "asynchronous"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 traitclaw-core = { workspace = true }

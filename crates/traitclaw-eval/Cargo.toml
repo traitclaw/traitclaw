@@ -4,7 +4,16 @@ version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
+repository.workspace = true
 description = "Evaluation framework for TraitClaw — test suites, metrics, and report generation"
+readme = "README.md"
+documentation = "https://docs.rs/traitclaw-eval"
+keywords = ["ai", "agent", "evaluation", "benchmark", "testing"]
+categories = ["development-tools::testing"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 traitclaw-core = { workspace = true }

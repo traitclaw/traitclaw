@@ -4,7 +4,16 @@ version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
+repository.workspace = true
 description = "MCP (Model Context Protocol) client for TraitClaw — discover and call tools from MCP servers"
+readme = "README.md"
+documentation = "https://docs.rs/traitclaw-mcp"
+keywords = ["ai", "agent", "mcp", "tools", "protocol"]
+categories = ["api-bindings"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 traitclaw-core = { workspace = true }

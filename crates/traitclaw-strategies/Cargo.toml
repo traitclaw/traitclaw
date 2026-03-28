@@ -4,7 +4,16 @@ version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
+repository.workspace = true
 description = "Built-in reasoning strategies (ReAct, MCTS, CoT) for the TraitClaw AI agent framework"
+readme = "README.md"
+documentation = "https://docs.rs/traitclaw-strategies"
+keywords = ["ai", "agent", "react", "mcts", "reasoning"]
+categories = ["api-bindings", "asynchronous"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
 default = ["react", "mcts", "cot"]

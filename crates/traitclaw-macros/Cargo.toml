@@ -4,7 +4,16 @@ version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
+repository.workspace = true
 description = "Proc macros for the TraitClaw AI Agent Framework"
+readme = "README.md"
+documentation = "https://docs.rs/traitclaw-macros"
+keywords = ["ai", "agent", "llm", "derive", "macro"]
+categories = ["development-tools::procedural-macro-helpers"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [lib]
 proc-macro = true

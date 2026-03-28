@@ -4,7 +4,16 @@ version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
+repository.workspace = true
 description = "SQLite memory backend for TraitClaw — persistent conversations and FTS5 recall"
+readme = "README.md"
+documentation = "https://docs.rs/traitclaw-memory-sqlite"
+keywords = ["ai", "agent", "memory", "sqlite", "persistence"]
+categories = ["database"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 traitclaw-core = { workspace = true }

@@ -20,6 +20,9 @@
 //! | `cot`   | Chain-of-Thought reasoning strategy |
 //! | `mcts`  | Monte Carlo Tree Search strategy |
 
+#![deny(missing_docs)]
+#![allow(clippy::redundant_closure)]
+
 pub mod common;
 pub mod streaming;
 

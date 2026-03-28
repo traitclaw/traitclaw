@@ -4,7 +4,16 @@ version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
+repository.workspace = true
 description = "OpenAI provider for TraitClaw with structured output and ergonomic constructors"
+readme = "README.md"
+documentation = "https://docs.rs/traitclaw-openai"
+keywords = ["ai", "agent", "openai", "gpt", "llm"]
+categories = ["api-bindings", "asynchronous"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 traitclaw-core = { workspace = true }

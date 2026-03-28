@@ -4,7 +4,16 @@ version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
+repository.workspace = true
 description = "RAG pipeline for TraitClaw — Retriever trait, grounding strategies, and BM25 keyword search"
+readme = "README.md"
+documentation = "https://docs.rs/traitclaw-rag"
+keywords = ["ai", "agent", "rag", "retrieval", "embedding"]
+categories = ["api-bindings"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 traitclaw-core = { workspace = true }

@@ -8,7 +8,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! traitclaw = "0.1"
+//! traitclaw = "1.0"
 //! ```
 //!
 //! ## Feature Flags

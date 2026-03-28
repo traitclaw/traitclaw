@@ -4,7 +4,16 @@ version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
+repository.workspace = true
 description = "OpenAI-compatible provider for TraitClaw (covers OpenAI, Ollama, Groq, Mistral, vLLM, Azure)"
+readme = "README.md"
+documentation = "https://docs.rs/traitclaw-openai-compat"
+keywords = ["ai", "agent", "openai", "ollama", "llm"]
+categories = ["api-bindings", "asynchronous"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 traitclaw-core = { workspace = true }

@@ -4,10 +4,19 @@ version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
+repository.workspace = true
 description = "Shared test utilities for the TraitClaw AI Agent Framework"
+readme = "README.md"
+documentation = "https://docs.rs/traitclaw-test-utils"
+keywords = ["ai", "agent", "testing", "mock", "test-utils"]
+categories = ["development-tools::testing"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
-traitclaw-core = { path = "../traitclaw-core" }
+traitclaw-core = { workspace = true }
 async-trait = { workspace = true }
 tokio = { workspace = true }
 serde_json = { workspace = true }

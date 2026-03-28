@@ -4,7 +4,16 @@ version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
+repository.workspace = true
 description = "Core traits, types, and runtime for the TraitClaw AI Agent Framework"
+readme = "README.md"
+documentation = "https://docs.rs/traitclaw-core"
+keywords = ["ai", "agent", "llm", "framework", "traits"]
+categories = ["api-bindings", "asynchronous"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 serde = { workspace = true }

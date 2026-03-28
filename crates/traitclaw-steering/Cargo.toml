@@ -4,7 +4,16 @@ version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
+repository.workspace = true
 description = "Built-in Guards, Hints, and Trackers for the TraitClaw AI agent framework"
+readme = "README.md"
+documentation = "https://docs.rs/traitclaw-steering"
+keywords = ["ai", "agent", "guardrails", "steering", "safety"]
+categories = ["api-bindings"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 traitclaw-core = { workspace = true }

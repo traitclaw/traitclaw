@@ -6,10 +6,11 @@
     <a href="https://docs.rs/traitclaw"><img src="https://docs.rs/traitclaw/badge.svg" alt="docs.rs"></a>
     <a href="https://github.com/traitclaw/traitclaw/actions"><img src="https://github.com/traitclaw/traitclaw/workflows/CI/badge.svg" alt="CI"></a>
     <a href="https://github.com/traitclaw/traitclaw/blob/main/LICENSE-MIT"><img src="https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg" alt="License"></a>
+    <a href="https://github.com/traitclaw/traitclaw"><img src="https://img.shields.io/badge/MSRV-1.75-blue.svg" alt="MSRV"></a>
   </p>
 </p>
 
-Build AI agents in Rust with **5 lines of code**. TraitClaw provides type-safe tools, streaming responses, persistent memory, multi-agent teams, and MCP integration — all with zero-cost abstractions and no garbage collector.
+Build AI agents in Rust with **5 lines of code**. TraitClaw provides type-safe tools, streaming responses, persistent memory, multi-agent teams, reasoning strategies, and MCP integration — all with zero-cost abstractions and no garbage collector.
 
 ```rust
 use traitclaw::prelude::*;
@@ -30,22 +31,55 @@ async fn main() -> anyhow::Result<()> {
 
 ## Why TraitClaw?
 
-| Feature | TraitClaw | TypeScript Frameworks | Other Rust |
-|---------|:--------:|:---------------------:|:----------:|
-| **Zero-cost abstractions** | ✅ | ❌ GC overhead | Partial |
-| **Type-safe tools** | ✅ `#[derive(Tool)]` | ❌ Runtime validation | ❌ Manual |
-| **5-line quickstart** | ✅ | ✅ | ❌ Verbose |
-| **Streaming** | ✅ First-class | ✅ | Partial |
-| **Persistent memory** | ✅ SQLite built-in | ❌ External | ❌ External |
-| **Multi-agent teams** | ✅ | Partial | ❌ |
-| **MCP integration** | ✅ Native | ✅ | ❌ |
-| **Static binary** | ✅ Single binary | ❌ Needs runtime | ✅ |
+- 🧩 **Composable Trait Architecture** — 8 core traits (`Provider`, `Tool`, `Memory`, `Guard`, `Hint`, `Tracker`, `ContextManager`, `OutputTransformer`) compose into any agent topology
+- 🔧 **Type-Safe Tool Calling** — `#[derive(Tool)]` generates JSON schemas from Rust structs at compile time
+- 🧠 **Multi-Strategy Reasoning** — Built-in ReAct, Chain-of-Thought, and MCTS strategies via `AgentStrategy` trait
+- 👥 **Multi-Agent Teams** — Teams, routers, delegation, and verification chains out of the box
+- 🔌 **MCP Integration** — Native Model Context Protocol client for tool discovery
+- 📡 **First-Class Streaming** — `async Stream` with typed events, not string concatenation
+- 🔒 **Production Observability** — `tracing` integration for structured logging and OpenTelemetry
+- 🦀 **Zero-Cost Abstractions** — No GC, no runtime, single static binary
 
 ## Quick Start
 
 ```bash
 cargo add traitclaw traitclaw-openai-compat tokio anyhow
 ```
+
+## Feature Matrix
+
+| Category | Feature | Status |
+|----------|---------|:------:|
+| **Core** | Agent & Builder | ✅ |
+| | 8 Core Traits | ✅ |
+| | Tool System + `#[derive(Tool)]` | ✅ |
+| | Real-Time Streaming | ✅ |
+| | Structured Output (JSON → Rust) | ✅ |
+| **Reasoning** | ReAct (Think→Act→Observe) | ✅ |
+| | Chain-of-Thought | ✅ |
+| | Monte Carlo Tree Search | ✅ |
+| | Custom Strategies | ✅ |
+| **Providers** | OpenAI / GPT | ✅ |
+| | Anthropic / Claude | ✅ |
+| | OpenAI-Compatible (Ollama, Groq, Mistral, vLLM) | ✅ |
+| **Memory** | In-Memory | ✅ |
+| | SQLite Persistent | ✅ |
+| | Compressed (LLM + Rule-Based) | ✅ |
+| **Orchestration** | Multi-Agent Teams | ✅ |
+| | Router Strategies (Sequential, Leader, Conditional) | ✅ |
+| | Verification Chains | ✅ |
+| | Agent Factory & Pool | ✅ |
+| **Integration** | MCP Client (stdio + SSE) | ✅ |
+| | RAG Pipeline (BM25, Embeddings, Hybrid) | ✅ |
+| | Evaluation Framework | ✅ |
+| **Safety** | Guards (Loop Detection, Rate Limit, Shell Deny) | ✅ |
+| | Hints (Budget, System Prompt Reminder) | ✅ |
+| | Trackers (Adaptive) | ✅ |
+| **Observability** | `tracing` Integration | ✅ |
+| | Lifecycle Hooks | ✅ |
+| **Planned** | Benchmarks & Orchestration Strategy | 🔜 v1.1 |
+| | Inter-Agent Contracts | 🔜 v1.2 |
+| | Retry & Checkpoint Resilience | 🔜 v1.3 |
 
 ## Features
 
@@ -105,83 +139,55 @@ use traitclaw_mcp::McpServer;
 let server = McpServer::stdio("npx", &["-y", "@mcp/server-filesystem", "."]).await?;
 ```
 
-## 🏗️ Core Architecture & Model
+### 🧠 Reasoning Strategies
 
-TraitClaw is built entirely on Rust **traits**. There is no vendor lock-in, no hidden runtimes, and no bloated abstractions. Everything is swappable.
-
-* **`Agent`**: The orchestrator. It manages the conversation loop, error handling, tool resolution, and streaming.
-* **`Provider`**: The LLM backend interface (`impl Provider`). Whether it's OpenAI, Anthropic, or an open-source local model, they all conform to this trait.
-* **`Memory`**: The conversation persistence layer (`impl Memory`). It dictates how and where dialogue history is stored.
-* **`Tool`**: The functional capability (`impl Tool`). Tools define their schema and execution logic.
-
-Because it relies on dynamic dispatch where flexibility is needed (e.g., `Box<dyn Tool>`) and static typing everywhere else, TraitClaw achieves zero-cost abstractions for the core loop.
-
-### 🔄 The Agent Loop (Core Engine)
-The true power of TraitClaw lies in how the `Agent` manages the execution loop securely and autonomously:
-1. **Context Hydration**: The agent retrieves past dialogue from `Memory` and appends the user's new prompt.
-2. **Provider Generation**: The `Provider` evaluates the context. It can either generate a final text response or request to execute a `Tool`.
-3. **Tool Resolution & Execution**: If a tool is requested, the Agent automatically parses the arguments, executes the corresponding Rust function, and appends the `ToolResult` back into the context.
-4. **Recursive Reasoning**: The Provider evaluates the tool's result. Steps 2 & 3 repeat until the Provider determines the task is complete.
-5. **Memory Commit**: The final trajectory is saved back to `Memory`.
-
-## 🚀 Extensibility
-
-Extending TraitClaw is as simple as implementing a trait.
-
-### Custom Providers
-Want to support a proprietary enterprise LLM or `llama.cpp`? Implement the `Provider` trait.
 ```rust
-#[async_trait]
-impl Provider for MyCustomProvider {
-    async fn generate(&self, messages: &[Message], config: &AgentConfig) -> Result<AgentOutput> { /* ... */ }
-    async fn stream(&self, messages: &[Message], config: &AgentConfig) -> Result<BoxStream<'static, Result<StreamEvent>>> { /* ... */ }
-}
+use traitclaw_strategies::ReActStrategy;
+let strategy = ReActStrategy::builder().max_steps(10).build();
 ```
 
-### Custom Memory
-Need to scale beyond SQLite? Implement the `Memory` trait for Redis, PostgreSQL, or DynamoDB.
-```rust
-#[async_trait]
-impl Memory for RedisMemory {
-    async fn get_messages(&self, session_id: &str) -> Result<Vec<Message>> { /* ... */ }
-    async fn add_message(&self, session_id: &str, message: Message) -> Result<()> { /* ... */ }
-}
+## 🏗️ Architecture Overview
+
+TraitClaw follows a layered trait architecture:
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    traitclaw (meta-crate)                │
+│  Re-exports everything. One dependency, full power.     │
+├─────────────────────────────────────────────────────────┤
+│  Extension Crates                                       │
+│  ┌──────────┐ ┌──────────┐ ┌───────┐ ┌──────┐         │
+│  │ steering │ │ sqlite   │ │ mcp   │ │ team │ ...     │
+│  └──────────┘ └──────────┘ └───────┘ └──────┘         │
+├─────────────────────────────────────────────────────────┤
+│  Provider Crates                                        │
+│  ┌──────────────┐ ┌────────────┐ ┌──────────────────┐  │
+│  │ openai-compat│ │ anthropic  │ │ openai (native)  │  │
+│  └──────────────┘ └────────────┘ └──────────────────┘  │
+├─────────────────────────────────────────────────────────┤
+│  traitclaw-core (foundation)                            │
+│  Agent · Provider · Tool · Memory · Guard · Hint ·      │
+│  Tracker · ContextManager · OutputTransformer ·          │
+│  ExecutionStrategy · AgentStrategy · AgentHook           │
+└─────────────────────────────────────────────────────────┘
 ```
 
-### Dynamic Tools
-While `#[derive(Tool)]` is great for simple functions, you can manually implement `Tool` to build dynamic schemas (e.g., querying a database schema at runtime to build the tool signature).
+### The Agent Loop
 
----
-
-## 📦 Crates Ecosystem & Status
-
-TraitClaw is modular. You only pay for what you compile. Some crates are currently in the process of being published to **crates.io** (subject to rate-limiting).
-
-| Crate | Purpose | crates.io Status |
-|---|---|---|
-| **`traitclaw`** | **Meta-crate (Start Here)** | ⏳ Pending _(Rate limited)_ |
-| `traitclaw-core` | Core traits, `Agent` runtime, `Tool`, `Memory` | ✅ `v0.1.0` |
-| `traitclaw-macros` | `#[derive(Tool)]` proc macro | ✅ `v0.1.0` |
-| `traitclaw-openai-compat`| OpenAI, Ollama, Groq, vLLM Provider | ✅ `v0.1.0` |
-| `traitclaw-openai` | Native OpenAI Provider | ⏳ Pending _(Rate limited)_ |
-| `traitclaw-anthropic` | Claude Provider | ✅ `v0.1.0` |
-| `traitclaw-steering` | Guards, Hints, Trackers | ⏳ Pending _(Rate limited)_ |
-| `traitclaw-memory-sqlite`| SQLite persistent memory | ✅ `v0.1.0` |
-| `traitclaw-mcp` | MCP client (Model Context Protocol) | ⏳ Pending _(Rate limited)_ |
-| `traitclaw-rag` | Basic RAG pipeline with BM25 | ⏳ Pending _(Rate limited)_ |
-| `traitclaw-team` | Multi-agent orchestration | ⏳ Pending _(Rate limited)_ |
-| `traitclaw-eval` | Evaluation & benchmarking suite | ⏳ Pending _(Rate limited)_ |
+1. **Context Hydration** — Retrieve past dialogue from `Memory`, append user prompt
+2. **Provider Generation** — LLM evaluates context, returns text or tool call
+3. **Tool Resolution** — Parse arguments, execute Rust function, append result
+4. **Recursive Reasoning** — Repeat steps 2–3 until task is complete
+5. **Memory Commit** — Save final trajectory back to `Memory`
 
 ## ⚙️ Feature Flags
 
-When using the `traitclaw` meta-package, you can opt-in to features:
-
 ```toml
 [dependencies]
-traitclaw = { version = "0.1", features = ["full"] }
+traitclaw = { version = "1.0", features = ["full"] }
 ```
 
-| Feature | Enables Crate | Default |
+| Feature | Crate | Default |
 |---------|-------|:-------:|
 | `openai-compat` | `traitclaw-openai-compat` | ✅ |
 | `macros` | `traitclaw-macros` | ✅ |
@@ -191,34 +197,98 @@ traitclaw = { version = "0.1", features = ["full"] }
 | `rag` | `traitclaw-rag` | ❌ |
 | `team` | `traitclaw-team` | ❌ |
 | `eval` | `traitclaw-eval` | ❌ |
+| `strategies` | `traitclaw-strategies` | ❌ |
+| `tiktoken` | Accurate token counting | ❌ |
 | `full` | All of the above | ❌ |
 
-## Examples
+## 📦 Crate Ecosystem
 
-| Example | Description | API Key? |
-|---------|-------------|:--------:|
-| [01-hello-agent](examples/01-hello-agent) | Minimal 5-line agent | Yes |
-| [02-tool-calling](examples/02-tool-calling) | Custom tools with `impl Tool` | Yes |
-| [03-streaming](examples/03-streaming) | Real-time streaming responses | Yes |
-| [04-steering](examples/04-steering) | Guards, Hints, auto-config | Yes |
-| [05-structured-output](examples/05-structured-output) | JSON → Rust types | Yes |
-| [06-memory-persistence](examples/06-memory-persistence) | SQLite conversation history | No |
-| [07-rag-pipeline](examples/07-rag-pipeline) | Retrieval-Augmented Generation | Optional |
-| [08-eval-suite](examples/08-eval-suite) | Agent quality testing | No |
-| [09-multi-agent](examples/09-multi-agent) | Team composition | No |
-| [10-mcp-client](examples/10-mcp-client) | MCP tool integration | Yes |
+| Crate | Purpose |
+|-------|---------|
+| [`traitclaw`](https://crates.io/crates/traitclaw) | **Meta-crate — start here** |
+| [`traitclaw-core`](https://crates.io/crates/traitclaw-core) | Core traits, Agent runtime, Builder |
+| [`traitclaw-macros`](https://crates.io/crates/traitclaw-macros) | `#[derive(Tool)]` proc macro |
+| [`traitclaw-openai-compat`](https://crates.io/crates/traitclaw-openai-compat) | OpenAI, Ollama, Groq, Mistral, vLLM |
+| [`traitclaw-openai`](https://crates.io/crates/traitclaw-openai) | Native OpenAI + Structured Output |
+| [`traitclaw-anthropic`](https://crates.io/crates/traitclaw-anthropic) | Anthropic Claude provider |
+| [`traitclaw-steering`](https://crates.io/crates/traitclaw-steering) | Guards, Hints, Trackers |
+| [`traitclaw-memory-sqlite`](https://crates.io/crates/traitclaw-memory-sqlite) | SQLite persistent memory |
+| [`traitclaw-mcp`](https://crates.io/crates/traitclaw-mcp) | MCP client (stdio + SSE) |
+| [`traitclaw-rag`](https://crates.io/crates/traitclaw-rag) | RAG pipeline (BM25, embeddings, hybrid) |
+| [`traitclaw-team`](https://crates.io/crates/traitclaw-team) | Multi-agent teams & orchestration |
+| [`traitclaw-eval`](https://crates.io/crates/traitclaw-eval) | Evaluation & benchmarking |
+| [`traitclaw-strategies`](https://crates.io/crates/traitclaw-strategies) | ReAct, CoT, MCTS reasoning |
+| [`traitclaw-test-utils`](https://crates.io/crates/traitclaw-test-utils) | Mock providers & test helpers |
+
+## 📚 Examples
+
+| # | Example | Description |
+|---|---------|-------------|
+| 01 | [hello-agent](https://github.com/traitclaw/traitclaw/tree/main/examples/01-hello-agent) | Minimal 5-line agent |
+| 02 | [tool-calling](https://github.com/traitclaw/traitclaw/tree/main/examples/02-tool-calling) | Custom tools with `#[derive(Tool)]` |
+| 03 | [streaming](https://github.com/traitclaw/traitclaw/tree/main/examples/03-streaming) | Real-time streaming responses |
+| 04 | [steering](https://github.com/traitclaw/traitclaw/tree/main/examples/04-steering) | Guards, Hints & auto-config |
+| 05 | [structured-output](https://github.com/traitclaw/traitclaw/tree/main/examples/05-structured-output) | JSON → Rust types |
+| 06 | [memory-persistence](https://github.com/traitclaw/traitclaw/tree/main/examples/06-memory-persistence) | SQLite conversation history |
+| 10 | [mcp-client](https://github.com/traitclaw/traitclaw/tree/main/examples/10-mcp-client) | MCP tool discovery |
+| 11 | [custom-strategy](https://github.com/traitclaw/traitclaw/tree/main/examples/11-custom-strategy) | Build your own AgentStrategy |
+| 12 | [lifecycle-hooks](https://github.com/traitclaw/traitclaw/tree/main/examples/12-lifecycle-hooks) | Observability middleware |
+| 13 | [custom-router](https://github.com/traitclaw/traitclaw/tree/main/examples/13-custom-router) | Custom team routing logic |
+| 14 | [compressed-memory](https://github.com/traitclaw/traitclaw/tree/main/examples/14-compressed-memory) | LLM-powered memory compression |
+| 15 | [context-manager](https://github.com/traitclaw/traitclaw/tree/main/examples/15-context-manager) | Custom context window management |
+| 16 | [output-transformer](https://github.com/traitclaw/traitclaw/tree/main/examples/16-output-transformer) | Post-process agent output |
+| 17 | [dynamic-tools](https://github.com/traitclaw/traitclaw/tree/main/examples/17-dynamic-tools) | Runtime tool registration |
+| 18 | [context-managers](https://github.com/traitclaw/traitclaw/tree/main/examples/18-context-managers) | Built-in context managers |
+| 19 | [grouped-registry](https://github.com/traitclaw/traitclaw/tree/main/examples/19-grouped-registry) | Grouped tool registry |
+| 20 | [mcp-tool-registry](https://github.com/traitclaw/traitclaw/tree/main/examples/20-mcp-tool-registry) | MCP as ToolRegistry |
+| 21 | [rag-pipeline](https://github.com/traitclaw/traitclaw/tree/main/examples/21-rag-pipeline) | RAG with BM25 + embeddings |
+| 22 | [multi-agent-team](https://github.com/traitclaw/traitclaw/tree/main/examples/22-multi-agent-team) | Team orchestration |
+| 23 | [eval-runner](https://github.com/traitclaw/traitclaw/tree/main/examples/23-eval-runner) | Evaluation test suites |
+| 24 | [agent-factory](https://github.com/traitclaw/traitclaw/tree/main/examples/24-agent-factory) | Factory pattern for agents |
+| 25 | [reasoning-strategies](https://github.com/traitclaw/traitclaw/tree/main/examples/25-reasoning-strategies) | ReAct, CoT, MCTS in action |
+| 26 | [observability](https://github.com/traitclaw/traitclaw/tree/main/examples/26-observability) | Tracing & structured logging |
 
 ```bash
 cd examples/01-hello-agent && cargo run
 ```
 
-## 🌟 Roadmap v0.2.0 (The Openness Update)
+## 🔒 Stability Policies
 
-* **`AgentStrategy` Trait**: Extract the core Agent loop into a Strategy pattern (e.g., `DefaultStrategy`, `MctsStrategy`, `ReActStrategy`) to allow developers to build advanced reasoning architectures while keeping the default experience simple.
-* **`AgentHook` Lifecycle System**: Introduce an observability and interception middleware (`on_provider_start`, `before_tool_execute`, `on_stream_chunk`) for Enterprise integrations (DataDog, OpenTelemetry, etc.).
-* **`TeamRouter` (Graph Orchestration)**: Expand `traitclaw-team` with customizable routing logic (State Machine / Graph) for complex, non-linear multi-agent workflows.
-* **Extensive Examples**: Provide dedicated showrooms in `examples/` demonstrating how to build custom Strategies, apply Lifecycle Hooks, and orchestrate advanced Teams.
+### Semantic Versioning
+
+TraitClaw follows [Semantic Versioning 2.0.0](https://semver.org/):
+
+| Change Type | Allowed In |
+|-------------|-----------|
+| Bug fixes | Patch (`1.0.x`) |
+| New public types, traits, methods | Minor (`1.x.0`) |
+| MSRV bump | Minor (`1.x.0`) |
+| Deprecation notices | Minor (`1.x.0`) |
+| Removal of deprecated items | Major (`2.0.0`) |
+| Trait signature changes | Major (`2.0.0`) |
+
+### MSRV (Minimum Supported Rust Version)
+
+- **Current:** Rust 1.75
+- Bumped only in **minor** releases, never in patches
+- Always documented in [CHANGELOG.md](https://github.com/traitclaw/traitclaw/blob/main/CHANGELOG.md)
+- Maintains a minimum 6-month lag from the latest Rust stable release
+
+### Deprecation Policy
+
+- Deprecated items are marked with `#[deprecated(since = "1.x", note = "Use Y instead")]`
+- Items remain available for a minimum of **2 minor versions** after deprecation
+- Deprecated items are removed only in the next **major** version (v2.0.0)
+
+## 🗺️ Roadmap
+
+| Version | Codename | Focus |
+|---------|----------|-------|
+| **v1.0.0** | Production Ready | ✅ Stable API, crates.io publication |
+| v1.1.0 | Benchmark & Orchestrate | Benchmarks, orchestration strategy |
+| v1.2.0 | Contracts | Inter-agent contracts, typed delegation |
+| v1.3.0 | Resilience | Retry, checkpoint, fault tolerance |
 
 ## License
 
-Licensed under either of [Apache License, Version 2.0](LICENSE-APACHE) or [MIT License](LICENSE-MIT) at your option.
+Licensed under either of [Apache License, Version 2.0](https://github.com/traitclaw/traitclaw/blob/main/LICENSE-APACHE) or [MIT License](https://github.com/traitclaw/traitclaw/blob/main/LICENSE-MIT) at your option.
