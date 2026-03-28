@@ -6,15 +6,11 @@ use crate::agent_builder::AgentBuilder;
 use crate::config::AgentConfig;
 use crate::streaming::AgentStream;
 use crate::traits::context_manager::ContextManager;
-#[allow(deprecated)]
-use crate::traits::context_strategy::ContextStrategy;
 use crate::traits::execution_strategy::ExecutionStrategy;
 use crate::traits::guard::Guard;
 use crate::traits::hint::Hint;
 use crate::traits::hook::AgentHook;
 use crate::traits::memory::Memory;
-#[allow(deprecated)]
-use crate::traits::output_processor::OutputProcessor;
 use crate::traits::output_transformer::OutputTransformer;
 use crate::traits::provider::Provider;
 use crate::traits::strategy::{AgentRuntime, AgentStrategy};
@@ -123,7 +119,6 @@ impl std::fmt::Display for AgentOutput {
 /// a single runtime that processes user input and produces output.
 ///
 /// Use [`Agent::builder()`] to construct an agent.
-#[allow(deprecated)]
 pub struct Agent {
     pub(crate) provider: Arc<dyn Provider>,
     pub(crate) tools: Vec<Arc<dyn ErasedTool>>,
@@ -132,10 +127,8 @@ pub struct Agent {
     pub(crate) hints: Vec<Arc<dyn Hint>>,
     pub(crate) tracker: Arc<dyn Tracker>,
     pub(crate) context_manager: Arc<dyn ContextManager>,
-    pub(crate) context_strategy: Arc<dyn ContextStrategy>,
     pub(crate) execution_strategy: Arc<dyn ExecutionStrategy>,
     pub(crate) output_transformer: Arc<dyn OutputTransformer>,
-    pub(crate) output_processor: Arc<dyn OutputProcessor>,
     pub(crate) tool_registry: Arc<dyn ToolRegistry>,
     pub(crate) strategy: Box<dyn AgentStrategy>,
     pub(crate) hooks: Vec<Arc<dyn AgentHook>>,
@@ -155,7 +148,6 @@ impl std::fmt::Debug for Agent {
     }
 }
 
-#[allow(deprecated)]
 impl Agent {
     /// Create a builder for constructing an agent.
     #[must_use]
@@ -210,10 +202,8 @@ impl Agent {
         hints: Vec<Arc<dyn Hint>>,
         tracker: Arc<dyn Tracker>,
         context_manager: Arc<dyn ContextManager>,
-        context_strategy: Arc<dyn ContextStrategy>,
         execution_strategy: Arc<dyn ExecutionStrategy>,
         output_transformer: Arc<dyn OutputTransformer>,
-        output_processor: Arc<dyn OutputProcessor>,
         tool_registry: Arc<dyn ToolRegistry>,
         strategy: Box<dyn AgentStrategy>,
         hooks: Vec<Arc<dyn AgentHook>>,
@@ -227,10 +217,8 @@ impl Agent {
             hints,
             tracker,
             context_manager,
-            context_strategy,
             execution_strategy,
             output_transformer,
-            output_processor,
             tool_registry,
             strategy,
             hooks,
@@ -250,10 +238,8 @@ impl Agent {
             hints: self.hints.clone(),
             tracker: Arc::clone(&self.tracker),
             context_manager: Arc::clone(&self.context_manager),
-            context_strategy: Arc::clone(&self.context_strategy),
             execution_strategy: Arc::clone(&self.execution_strategy),
             output_transformer: Arc::clone(&self.output_transformer),
-            output_processor: Arc::clone(&self.output_processor),
             tool_registry: Arc::clone(&self.tool_registry),
             hooks: self.hooks.clone(),
             config: self.config.clone(),
@@ -438,10 +424,8 @@ impl Agent {
             hints: self.hints.clone(),
             tracker: Arc::clone(&self.tracker),
             context_manager: Arc::clone(&self.context_manager),
-            context_strategy: Arc::clone(&self.context_strategy),
             execution_strategy: Arc::clone(&self.execution_strategy),
             output_transformer: Arc::clone(&self.output_transformer),
-            output_processor: Arc::clone(&self.output_processor),
             tool_registry: Arc::clone(&self.tool_registry),
             config: self.config.clone(),
             hooks: self.hooks.clone(),

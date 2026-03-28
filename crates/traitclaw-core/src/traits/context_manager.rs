@@ -1,10 +1,7 @@
-//! Async context window management — the v0.3.0 evolution of [`ContextStrategy`].
+//! Async context window management.
 //!
-//! [`ContextManager`] is the async replacement for the sync [`ContextStrategy`] trait.
+//! [`ContextManager`] provides pluggable, async context window management.
 //! It supports LLM-powered compression and accurate token counting.
-//!
-//! A blanket implementation is provided so that any existing [`ContextStrategy`]
-//! implementation automatically works as a [`ContextManager`] with zero code changes.
 //!
 //! # Example
 //!
@@ -35,8 +32,6 @@
 
 use async_trait::async_trait;
 
-#[allow(deprecated)]
-use crate::traits::context_strategy::ContextStrategy;
 use crate::types::agent_state::AgentState;
 use crate::types::message::Message;
 
@@ -47,13 +42,6 @@ use crate::types::message::Message;
 /// LLM-powered summarization and external token-counting APIs.
 ///
 /// Implementations MUST NOT remove system messages.
-///
-/// # Migration from `ContextStrategy`
-///
-/// `ContextManager` replaces the sync [`ContextStrategy`] trait.
-/// Existing `ContextStrategy` implementations work automatically via a blanket impl.
-/// See the [migration guide](https://github.com/traitclaw/traitclaw/docs/migration-v0.2-to-v0.3.md)
-/// for details.
 #[async_trait]
 pub trait ContextManager: Send + Sync {
     /// Prepare the message list by pruning or compressing if necessary.
@@ -76,28 +64,9 @@ pub trait ContextManager: Send + Sync {
     }
 }
 
-// ---------------------------------------------------------------------------
-// Blanket impl: any ContextStrategy automatically becomes a ContextManager
-// ---------------------------------------------------------------------------
-
-#[allow(deprecated)]
-#[async_trait]
-impl<T: ContextStrategy + 'static> ContextManager for T {
-    async fn prepare(
-        &self,
-        messages: &mut Vec<Message>,
-        context_window: usize,
-        state: &mut AgentState,
-    ) {
-        // Delegate to the sync ContextStrategy::prepare
-        ContextStrategy::prepare(self, messages, context_window, state);
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::types::model_info::ModelTier;
     use std::sync::Arc;
 
     // ── Object safety: confirm Arc<dyn ContextManager> compiles ──────────
@@ -117,48 +86,6 @@ mod tests {
         }
 
         let _: Arc<dyn ContextManager> = Arc::new(Dummy);
-    }
-
-    // ── Blanket impl: ContextStrategy → ContextManager ──────────────────
-    #[tokio::test]
-    async fn test_blanket_impl_delegates_to_context_strategy() {
-        #[allow(deprecated)]
-        use crate::traits::context_strategy::SlidingWindowStrategy;
-        use crate::types::message::MessageRole;
-
-        let strategy = SlidingWindowStrategy::default();
-        let mut messages = vec![
-            Message {
-                role: MessageRole::System,
-                content: "system".to_string(),
-                tool_call_id: None,
-            },
-            Message {
-                role: MessageRole::User,
-                content: "x".repeat(8000),
-                tool_call_id: None,
-            },
-            Message {
-                role: MessageRole::Assistant,
-                content: "y".repeat(8000),
-                tool_call_id: None,
-            },
-        ];
-        let mut state = AgentState::new(ModelTier::Small, 4096);
-
-        // Call through the ContextManager trait (blanket impl)
-        ContextManager::prepare(&strategy, &mut messages, 2000, &mut state).await;
-
-        // SlidingWindowStrategy should have removed some messages
-        assert!(
-            messages.len() < 3,
-            "blanket impl should delegate to sync prepare"
-        );
-        assert_eq!(
-            messages[0].role,
-            MessageRole::System,
-            "system message preserved"
-        );
     }
 
     // ── Default estimate_tokens() ───────────────────────────────────────

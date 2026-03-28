@@ -105,7 +105,7 @@ async fn test_builder_without_provider_fails() {
         Err(e) => e.to_string(),
         Ok(_) => panic!("Expected error"),
     };
-    assert!(err_msg.contains("No provider"));
+    assert!(err_msg.contains("no provider configured"));
 }
 
 // ───────────── Tool Execution Tests ─────────────

@@ -38,14 +38,10 @@ use async_trait::async_trait;
 use crate::agent::AgentOutput;
 use crate::config::AgentConfig;
 use crate::traits::context_manager::ContextManager;
-#[allow(deprecated)]
-use crate::traits::context_strategy::ContextStrategy;
 use crate::traits::execution_strategy::ExecutionStrategy;
 use crate::traits::guard::Guard;
 use crate::traits::hint::Hint;
 use crate::traits::memory::Memory;
-#[allow(deprecated)]
-use crate::traits::output_processor::OutputProcessor;
 use crate::traits::output_transformer::OutputTransformer;
 use crate::traits::provider::Provider;
 use crate::traits::tool::ErasedTool;
@@ -58,7 +54,6 @@ use crate::Result;
 /// Exposes all agent components needed to execute a reasoning loop,
 /// without exposing the strategy itself (avoiding recursion).
 #[derive(Clone)]
-#[allow(deprecated)]
 pub struct AgentRuntime {
     /// The LLM provider.
     pub provider: Arc<dyn Provider>,
@@ -72,17 +67,13 @@ pub struct AgentRuntime {
     pub hints: Vec<Arc<dyn Hint>>,
     /// Runtime tracker.
     pub tracker: Arc<dyn Tracker>,
-    /// Context window manager (v0.3.0).
+    /// Context window manager.
     pub context_manager: Arc<dyn ContextManager>,
-    /// Context window strategy (v0.2.0 compat — deprecated, use `context_manager`).
-    pub context_strategy: Arc<dyn ContextStrategy>,
     /// Tool execution strategy (sequential/parallel).
     pub execution_strategy: Arc<dyn ExecutionStrategy>,
-    /// Tool output transformer (v0.3.0).
+    /// Tool output transformer.
     pub output_transformer: Arc<dyn OutputTransformer>,
-    /// Tool output processor (v0.2.0 compat — deprecated, use `output_transformer`).
-    pub output_processor: Arc<dyn OutputProcessor>,
-    /// Tool registry (v0.3.0).
+    /// Tool registry.
     pub tool_registry: Arc<dyn ToolRegistry>,
     /// Agent configuration.
     pub config: AgentConfig,

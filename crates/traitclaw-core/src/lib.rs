@@ -48,8 +48,6 @@ pub mod transformers;
 
 // Re-export core traits at crate root
 pub use traits::context_manager::ContextManager;
-#[allow(deprecated)]
-pub use traits::context_strategy::{ContextStrategy, NoopContextStrategy, SlidingWindowStrategy};
 pub use traits::execution_strategy::{
     AdaptiveStrategy, ExecutionStrategy, ParallelStrategy, PendingToolCall, SequentialStrategy,
     ToolResult,
@@ -57,10 +55,6 @@ pub use traits::execution_strategy::{
 pub use traits::guard::{Guard, GuardResult};
 pub use traits::hint::{Hint, HintMessage, HintPriority, InjectionPoint};
 pub use traits::memory::Memory;
-#[allow(deprecated)]
-pub use traits::output_processor::{
-    ChainProcessor, NoopProcessor, OutputProcessor, TruncateProcessor,
-};
 pub use traits::output_transformer::OutputTransformer;
 pub use traits::provider::Provider;
 
@@ -116,29 +110,25 @@ pub use pool::AgentPool;
 pub mod prelude {
 
     pub use crate::traits::context_manager::ContextManager;
-    #[allow(deprecated)]
-    pub use crate::traits::context_strategy::{
-        ContextStrategy, NoopContextStrategy, SlidingWindowStrategy,
-    };
     pub use crate::traits::execution_strategy::{
         ExecutionStrategy, ParallelStrategy, SequentialStrategy,
     };
     pub use crate::traits::guard::{Guard, GuardResult};
     pub use crate::traits::hint::{Hint, HintMessage};
     pub use crate::traits::memory::Memory;
-    #[allow(deprecated)]
-    pub use crate::traits::output_processor::{OutputProcessor, TruncateProcessor};
     pub use crate::traits::output_transformer::OutputTransformer;
     pub use crate::traits::provider::{ModelInfo, ModelTier, Provider};
     pub use crate::traits::tool::{ErasedTool, Tool, ToolSchema};
     pub use crate::traits::tool_registry::{SimpleRegistry, ToolRegistry};
 
     // v0.4.0: Advanced registries
-    pub use crate::registries::{AdaptiveRegistry, GroupedRegistry};
+    pub use crate::registries::{AdaptiveRegistry, DynamicRegistry, GroupedRegistry};
 
     // v0.4.0: Progressive transformer
     pub use crate::traits::tracker::Tracker;
-    pub use crate::transformers::{FullOutputRetriever, ProgressiveTransformer};
+    pub use crate::transformers::{
+        BudgetAwareTruncator, FullOutputRetriever, ProgressiveTransformer, TransformerChain,
+    };
 
     // v0.3.0: Built-in context managers
     pub use crate::context_managers::{LlmCompressor, RuleBasedCompressor, TieredCompressor};
@@ -152,7 +142,9 @@ pub mod prelude {
 
     pub use crate::config::AgentConfig;
     pub use crate::error::{Error, Result};
+    pub use crate::memory::compressed::CompressedMemory;
     pub use crate::memory::in_memory::InMemoryMemory;
+    pub use crate::retry::{RetryConfig, RetryProvider};
 
     pub use crate::agent::{Agent, AgentOutput, AgentOutputContent, AgentSession, RunUsage};
     pub use crate::agent_builder::AgentBuilder;

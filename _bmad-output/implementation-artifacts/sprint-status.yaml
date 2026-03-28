@@ -20,7 +20,7 @@
 #   - done: Story completed
 
 generated: 2026-03-24T00:47:00+07:00
-last_updated: 2026-03-28T17:10:00+07:00
+last_updated: 2026-03-28T22:10:00+07:00
 project: traitclaw
 project_key: NOKEY
 tracking_system: file-system
@@ -286,3 +286,27 @@ development_status:
   5-1-create-observability-example: done
   5-2-migration-guide-and-compat: done
 
+  # ==========================================================================
+  # v0.9.0 — Hardening (API Cleanup & Freeze Preparation)
+  # ==========================================================================
+
+  # === Epic 1: Deprecated Type Removal ===
+  epic-1-v090: in-progress
+  1-1-remove-blanket-implementations: review
+  1-2-remove-agentruntime-deprecated-fields: review
+  1-3-remove-deprecated-reexports-and-module-declarations: review
+  1-4-delete-deprecated-source-files-and-final-cleanup: review
+  epic-1-v090-retrospective: optional
+
+  # === Epic 2: API Audit & Polish ===
+  epic-2-v090: in-progress
+  2-1-prelude-enrichment: review
+  2-2-builder-error-message-improvement: review
+  2-3-public-api-visibility-audit: review
+  epic-2-v090-retrospective: optional
+
+  # === Epic 3: Migration Guide & Verification ===
+  epic-3-v090: in-progress
+  3-1-create-migration-guide: review
+  3-2-full-verification-and-release-readiness: review
+  epic-3-v090-retrospective: optional

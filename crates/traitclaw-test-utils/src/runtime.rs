@@ -88,7 +88,6 @@ impl OutputTransformer for NoopOutputTransformer {
 /// let rt = make_runtime(MockProvider::text("hello"), vec![]);
 /// assert_eq!(rt.config.max_iterations, 20);
 /// ```
-#[allow(deprecated)]
 pub fn make_runtime(
     provider: impl Provider + 'static,
     tools: Vec<Arc<dyn ErasedTool>>,
@@ -114,7 +113,6 @@ pub fn make_runtime(
 /// let rt = make_runtime_with_config(MockProvider::text("ok"), vec![], config);
 /// assert_eq!(rt.config.max_iterations, 5);
 /// ```
-#[allow(deprecated)]
 pub fn make_runtime_with_config(
     provider: impl Provider + 'static,
     tools: Vec<Arc<dyn ErasedTool>>,
@@ -128,10 +126,8 @@ pub fn make_runtime_with_config(
         hints: vec![],
         tracker: Arc::new(NoopTracker),
         context_manager: Arc::new(NoopContextManager),
-        context_strategy: Arc::new(traitclaw_core::NoopContextStrategy),
         execution_strategy: Arc::new(traitclaw_core::SequentialStrategy),
         output_transformer: Arc::new(NoopOutputTransformer),
-        output_processor: Arc::new(traitclaw_core::NoopProcessor),
         tool_registry: Arc::new(SimpleRegistry::new(tools)),
         config,
         hooks: vec![],

@@ -1,11 +1,8 @@
-//! Async tool output transformation — the v0.3.0 evolution of [`OutputProcessor`].
+//! Async tool output transformation.
 //!
-//! [`OutputTransformer`] is the async replacement for the sync [`OutputProcessor`] trait.
+//! [`OutputTransformer`] provides context-aware, async tool output processing.
 //! It adds context-awareness (tool name and agent state) and supports async operations
 //! such as LLM-powered summarization of tool output.
-//!
-//! A blanket implementation is provided so that any existing [`OutputProcessor`]
-//! implementation automatically works as an [`OutputTransformer`] with zero code changes.
 //!
 //! # Example
 //!
@@ -43,8 +40,6 @@
 
 use async_trait::async_trait;
 
-#[allow(deprecated)]
-use crate::traits::output_processor::OutputProcessor;
 use crate::types::agent_state::AgentState;
 
 /// Async trait for context-aware tool output transformation.
@@ -52,12 +47,6 @@ use crate::types::agent_state::AgentState;
 /// Called after each tool execution to process the output before adding it
 /// to the message context. Supports async operations such as LLM-powered
 /// summarization.
-///
-/// # Migration from `OutputProcessor`
-///
-/// `OutputTransformer` replaces the sync [`OutputProcessor`] trait.
-/// Existing `OutputProcessor` implementations work automatically via a blanket impl.
-/// The blanket impl ignores the `tool_name` and `state` parameters.
 #[async_trait]
 pub trait OutputTransformer: Send + Sync {
     /// Transform tool output, optionally using context about which tool
@@ -72,19 +61,6 @@ pub trait OutputTransformer: Send + Sync {
     /// Default: 4-characters ≈ 1-token approximation.
     fn estimate_output_tokens(&self, output: &str) -> usize {
         output.len() / 4 + 1
-    }
-}
-
-// ---------------------------------------------------------------------------
-// Blanket impl: any OutputProcessor automatically becomes an OutputTransformer
-// ---------------------------------------------------------------------------
-
-#[allow(deprecated)]
-#[async_trait]
-impl<T: OutputProcessor + 'static> OutputTransformer for T {
-    async fn transform(&self, output: String, _tool_name: &str, _state: &AgentState) -> String {
-        // Delegate to the sync OutputProcessor::process, ignoring context
-        OutputProcessor::process(self, output)
     }
 }
 
@@ -112,30 +88,6 @@ mod tests {
         }
 
         let _: Arc<dyn OutputTransformer> = Arc::new(Dummy);
-    }
-
-    // ── Blanket impl: OutputProcessor → OutputTransformer ────────────────
-    #[tokio::test]
-    async fn test_blanket_impl_delegates_to_output_processor() {
-        #[allow(deprecated)]
-        use crate::traits::output_processor::TruncateProcessor;
-
-        let processor = TruncateProcessor::new(10);
-        let state = AgentState::new(ModelTier::Small, 4096);
-
-        // Short input — should pass through
-        let result =
-            OutputTransformer::transform(&processor, "hello".to_string(), "test_tool", &state)
-                .await;
-        assert_eq!(result, "hello");
-
-        // Long input — should be truncated
-        let long = "12345678901234567890".to_string();
-        let result = OutputTransformer::transform(&processor, long, "test_tool", &state).await;
-        assert!(
-            result.contains("[output truncated]"),
-            "blanket impl should delegate to sync process: {result}"
-        );
     }
 
     // ── Default estimate_output_tokens() ────────────────────────────────

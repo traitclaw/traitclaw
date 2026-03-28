@@ -27,7 +27,6 @@ use crate::Result;
 pub struct DefaultStrategy;
 
 #[async_trait]
-#[allow(deprecated)]
 impl AgentStrategy for DefaultStrategy {
     #[tracing::instrument(skip_all, fields(session_id = session_id, model = %runtime.provider.model_info().name))]
     async fn execute(
@@ -239,7 +238,6 @@ fn inject_hints(runtime: &AgentRuntime, state: &AgentState, messages: &mut Vec<M
 }
 
 /// Process tool calls with hook interception support.
-#[allow(deprecated)]
 async fn process_tool_calls(
     runtime: &AgentRuntime,
     tool_calls: &[ToolCall],
