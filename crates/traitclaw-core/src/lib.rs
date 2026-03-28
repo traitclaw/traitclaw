@@ -41,7 +41,6 @@ pub mod memory;
 pub mod pool;
 pub mod registries;
 pub mod retry;
-pub(crate) mod runtime;
 pub(crate) mod streaming;
 pub mod token_counter;
 pub mod token_counting;
