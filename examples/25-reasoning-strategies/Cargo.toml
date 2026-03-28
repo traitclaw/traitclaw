@@ -1,0 +1,16 @@
+[package]
+name = "reasoning-strategies"
+version = "0.6.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+traitclaw = { path = "../../crates/traitclaw", features = ["strategies"] }
+traitclaw-strategies = { path = "../../crates/traitclaw-strategies" }
+traitclaw-openai-compat = { path = "../../crates/traitclaw-openai-compat" }
+tokio = { version = "1", features = ["full"] }
+async-trait = "0.1"
+anyhow = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+schemars = "0.8"

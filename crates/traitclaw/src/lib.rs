@@ -23,6 +23,7 @@
 //! | `rag` | `traitclaw-rag` | ❌ |
 //! | `team` | `traitclaw-team` | ❌ |
 //! | `eval` | `traitclaw-eval` | ❌ |
+//! | `strategies` | `traitclaw-strategies` | ❌ |
 //! | `full` | all of the above | ❌ |
 
 #![deny(warnings)]
@@ -63,3 +64,7 @@ pub use traitclaw_team as team;
 /// Evaluation and benchmarking
 #[cfg(feature = "eval")]
 pub use traitclaw_eval as eval;
+
+/// Reasoning strategies (ReAct, CoT, MCTS)
+#[cfg(feature = "strategies")]
+pub use traitclaw_strategies as strategies;

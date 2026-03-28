@@ -13,6 +13,7 @@ members = [
     "crates/traitclaw-rag",
     "crates/traitclaw-team",
     "crates/traitclaw-eval",
+    "crates/traitclaw-strategies",
     "examples/01-hello-agent",
     "examples/02-tool-calling",
     "examples/03-streaming",
@@ -34,6 +35,7 @@ members = [
     "examples/22-multi-agent-team",
     "examples/23-eval-runner",
     "examples/24-agent-factory",
+    "examples/25-reasoning-strategies",
     "showcase/miniclaw",
 ]
 
@@ -80,3 +82,4 @@ traitclaw-mcp = { path = "crates/traitclaw-mcp", version = "0.6.0" }
 traitclaw-rag = { path = "crates/traitclaw-rag", version = "0.6.0" }
 traitclaw-team = { path = "crates/traitclaw-team", version = "0.6.0" }
 traitclaw-eval = { path = "crates/traitclaw-eval", version = "0.6.0" }
+traitclaw-strategies = { path = "crates/traitclaw-strategies", version = "0.6.0" }

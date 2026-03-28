@@ -16,6 +16,7 @@ traitclaw-mcp = { workspace = true, optional = true }
 traitclaw-rag = { workspace = true, optional = true }
 traitclaw-team = { workspace = true, optional = true }
 traitclaw-eval = { workspace = true, optional = true }
+traitclaw-strategies = { workspace = true, optional = true }
 schemars = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
@@ -30,5 +31,6 @@ mcp = ["dep:traitclaw-mcp"]
 rag = ["dep:traitclaw-rag"]
 team = ["dep:traitclaw-team"]
 eval = ["dep:traitclaw-eval"]
-full = ["openai-compat", "macros", "steering", "sqlite", "mcp", "rag", "team", "eval", "tiktoken"]
+strategies = ["dep:traitclaw-strategies"]
+full = ["openai-compat", "macros", "steering", "sqlite", "mcp", "rag", "team", "eval", "tiktoken", "strategies"]
 tiktoken = ["traitclaw-core/tiktoken"]

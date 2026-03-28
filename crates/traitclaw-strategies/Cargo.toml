@@ -1,0 +1,21 @@
+[package]
+name = "traitclaw-strategies"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "Built-in reasoning strategies (ReAct, MCTS, CoT) for the TraitClaw AI agent framework"
+
+[features]
+default = ["react", "mcts", "cot"]
+react = []
+mcts = []
+cot = []
+
+[dependencies]
+traitclaw-core = { workspace = true }
+async-trait = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }

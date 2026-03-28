@@ -1,358 +1,327 @@
 ---
-stepsCompleted: ["step-01-init.md", "step-02-discovery.md", "step-02b-vision.md", "step-02c-executive-summary.md", "step-03-success.md", "step-04-journeys.md", "step-05-features.md", "step-06-nfr.md", "step-07-ux.md", "step-08-tech.md", "step-09-risks.md", "step-10-compliance.md", "step-11-review.md", "step-12-complete.md"]
-inputDocuments: ["brainstorm_openness.md", "project-context.md", "architecture.md", "epics.md"]
+stepsCompleted: ["step-01-init.md", "step-02-discovery.md", "step-02b-vision.md", "step-02c-executive-summary.md", "step-03-success.md", "step-04-journeys.md", "step-05-domain.md", "step-06-innovation.md", "step-07-project-type.md", "step-08-scoping.md", "step-09-functional.md", "step-10-nonfunctional.md", "step-11-polish.md", "step-12-complete.md"]
+inputDocuments: ["product-brief-traitclaw-2026-03-26.md", "prd-v0.6.0.md", "brainstorming/v070-reasoning-strategies.md", "project-context.md"]
 workflowType: 'prd'
 classification:
   projectType: developer_tool
   domain: AI / Developer Tool
-  complexity: medium
+  complexity: high
   projectContext: brownfield
 ---
 
-# Product Requirements Document — TraitClaw v0.2.0 "The Openness Update"
+# Product Requirements Document - traitclaw v0.7.0 "Reasoning"
 
 **Author:** Bangvu
-**Date:** 2026-03-25
-**Version:** 0.2.0
-
----
+**Date:** 2026-03-28
 
 ## Executive Summary
 
-TraitClaw v0.2.0 ("The Openness Update") evolves the existing trait-driven Rust AI Agent framework from a functional but closed-loop system into a fully extensible platform. The update introduces three new core traits — `AgentStrategy`, `AgentHook`, and `Router` — alongside two smart implementations (`CompressedMemory`, `SmartToolRegistry`) to unlock advanced reasoning architectures (MCTS, ReAct), enterprise-grade observability (OpenTelemetry, DataDog), and non-linear multi-agent orchestration. The fundamental insight driving v0.2.0 is that an Agent is simply `f(context) → action`; every extension point is merely a way to organize how that function is invoked, observed, or composed. This keeps the API surface minimal while maximizing power for advanced users.
+TraitClaw v0.7.0 "Reasoning" extends the framework from agent composition into agent intelligence. Building on v0.6.0's `AgentFactory`, `AgentPool`, and `RoundRobinGroupChat`, this release delivers production-ready reasoning strategies — `ReActStrategy`, `MctsStrategy`, and `ChainOfThoughtStrategy` — in a new `traitclaw-strategies` crate. Users import and apply strategies in ≤3 lines; no custom reasoning loop design required.
+
+Additionally, v0.7.0 introduces `StreamingOutputTransformer` in `traitclaw-core`, enabling real-time streaming transformation of agent output — critical for ReAct loops where users need to see each Think→Act→Observe step as it happens.
+
+The release targets Rust developers who already use TraitClaw for multi-agent systems and need their agents to reason better without building reasoning infrastructure from scratch. No Rust AI framework currently ships built-in reasoning strategies — TraitClaw v0.7.0 closes this gap.
 
 ### What Makes This Special
 
-Unlike Python/TypeScript AI frameworks that force developers to subclass monolithic `Agent` classes or learn proprietary DSLs, TraitClaw leverages Rust's trait system to provide **compile-time-verified extensibility** with zero runtime overhead on the default path. Key architectural decisions — dynamic dispatch for Strategy (LLM latency >> vtable overhead), async hooks (Rust 1.75+ native support), simple `Router` trait (no forced graph dependency), and decorator pattern for Memory — ensure that newcomers get a working Agent in 5 lines while power users can swap every component without forking the framework.
+1. **Batteries-included reasoning** — Three production-ready strategies (ReAct, MCTS, CoT) ship out of the box. Feature flags default all-on; power users opt-out per strategy for minimal binary size.
+2. **New dedicated crate** — `traitclaw-strategies` keeps `traitclaw-core` minimal while providing zero-cost access to advanced reasoning patterns.
+3. **Streaming-native design** — `StreamingOutputTransformer` enables real-time thought-step streaming, transforming the UX of reasoning-heavy agents from blocking to progressive.
+4. **Consistent with existing patterns** — All strategies implement the existing `AgentStrategy` trait from v0.2.0; users already familiar with custom strategies can inspect, extend, or replace any built-in.
 
 ## Project Classification
 
-- **Project Type:** Developer Tool (Rust Framework/Library, published as 12 crates on crates.io)
-- **Domain:** AI / Developer Tooling
-- **Complexity:** Medium (requires precise trait abstraction design)
-- **Project Context:** Brownfield (building on TraitClaw v0.1.0 with 12 published crates)
-
----
+| Attribute | Value |
+|-----------|-------|
+| **Project Type** | Developer Tool (Rust Framework/Library) |
+| **Domain** | AI / Developer Tooling |
+| **Complexity** | High |
+| **Project Context** | Brownfield (building on TraitClaw v0.6.0) |
+| **New Crate** | `traitclaw-strategies` |
+| **Breaking Changes** | Zero — purely additive |
 
 ## Success Criteria
 
 ### User Success
 
-- **Newcomer onboarding:** A Rust developer unfamiliar with TraitClaw can build a working Agent with custom Strategy in under 30 minutes using the provided examples.
-- **Zero-disruption upgrade:** Existing v0.1.0 code compiles and runs on v0.2.0 without modification. All new traits have Noop/Default implementations.
-- **Extensibility clarity:** A developer can identify which trait to implement for their use case (observability → Hook, custom loop → Strategy, team routing → Router) from the README alone.
+| Metric | Target | Persona |
+|--------|--------|---------|
+| **Time to first reasoning agent** | ≤ 10 minutes from `cargo add` → ReAct agent running | Minh (Rust dev) |
+| **Strategy swap effort** | Switch strategy (ReAct ↔ MCTS ↔ CoT) in ≤ 3 lines of code | Minh |
+| **Custom strategy migration** | Users with custom `AgentStrategy` upgrade v0.6→v0.7 with zero changes | Minh, Linh |
+| **Streaming thought UX** | ReAct thought steps stream progressively, not blocking | Linh |
 
 ### Business Success
 
-- **Ecosystem adoption:** 500+ downloads/month on crates.io within 3 months of v0.2.0 release.
-- **Community engagement:** At least 5 community-contributed implementations (custom Strategies, Hooks, or Routers) within 6 months.
-- **Competitive positioning:** Listed in Rust AI framework comparisons as the most extensible Rust alternative.
+| Metric | Target (6 months post-release) |
+|--------|-------------------------------|
+| **Example coverage** | 28+ runnable examples (current ~24) |
+| **Docs coverage** | 100% public API of `traitclaw-strategies` documented |
+| **Adoption signal** | ≥ 3 community examples/blog posts using built-in strategies |
 
 ### Technical Success
 
-- **Zero regression:** All existing tests pass. No performance degradation on the default path.
-- **Minimal API surface:** No more than 3 new traits added to `traitclaw-core`.
-- **No new mandatory dependencies:** All new functionality is feature-gated or implemented as optional crates.
+| Metric | Target |
+|--------|--------|
+| **Backward compatibility** | All v0.6.0 examples compile on v0.7.0 — zero breaking changes |
+| **Compile time** | < 2% increase with `traitclaw-strategies` default features |
+| **MSRV** | Rust 1.75+ maintained |
+| **Test coverage** | ≥ 80% line coverage for `traitclaw-strategies` |
+| **No new required deps** | Core strategies work with existing deps; MCTS parallelism uses `tokio` (already required) |
 
 ### Measurable Outcomes
 
-| Metric | Target | Measurement |
-|--------|--------|-------------|
-| Compile time (default features) | < 5% increase | `cargo build --timings` |
-| Binary size (default features) | < 3% increase | `cargo bloat` |
-| API surface (trait count) | ≤ 3 new traits in core | Manual count |
-| Example coverage | 1 example per new trait | Directory listing |
-| Doc coverage | 100% public items documented | `cargo doc --no-deps` |
-
----
+- A new user can run a ReAct agent from the example in ≤ 10 minutes
+- Swapping from `ReActStrategy` to `MctsStrategy` requires changing only the strategy constructor — all other agent code unchanged
+- `StreamingOutputTransformer` produces visible incremental output within 500ms of first token
+- `cargo build --timings` shows < 2% regression vs v0.6.0 baseline
 
 ## Product Scope
 
-### MVP — Minimum Viable Product (v0.2.0)
+### MVP — v0.7.0 Release
 
-1. **`AgentStrategy` trait** — Dynamic dispatch (`Box<dyn AgentStrategy>`) with `DefaultStrategy` preserving current loop behavior.
-2. **`AgentHook` trait** — Async lifecycle hooks (`on_provider_start`, `on_provider_end`, `before_tool_execute`, `after_tool_execute`, `on_stream_chunk`). NoopHook default.
-3. **`Router` trait** — Simple `fn route(msg, state) → AgentId` for `traitclaw-team`. `SequentialRouter` and `LeaderRouter` defaults.
-4. **`CompressedMemory`** — Decorator wrapping any `Memory` implementation with automatic context summarization.
-5. **Examples** — Dedicated examples for Strategy, Hook, Router, and CompressedMemory.
-6. **Documentation** — Updated README, API docs, and migration guide.
+1. `ReActStrategy` — Think→Act→Observe loop with tool calling
+2. `MctsStrategy` — Monte Carlo Tree Search with parallel branch evaluation
+3. `ChainOfThoughtStrategy` — Step-by-step reasoning injection
+4. `StreamingOutputTransformer` trait in `traitclaw-core`
+5. New crate `traitclaw-strategies` with feature flags (default all-on)
+6. Upgraded `examples/11-custom-strategy` + new per-strategy examples
+7. Migration guide `docs/migration-v0.6-to-v0.7.md`
+8. README update with "Reasoning Strategies" section
 
-### Growth Features (Post-MVP — v0.3.0)
-
-- `SmartToolRegistry` — Semantic search-based dynamic tool selection.
-- `OutputParser` trait — Custom format parsing for local LLMs without JSON mode.
-- Built-in `MctsStrategy` and `ReActStrategy` implementations.
-- OpenTelemetry Hook implementation crate (`traitclaw-otel`).
-
-### Vision (Future — v1.0)
-
-- Visual workflow builder (graph-based UI for Agent orchestration).
-- Cloud-native deployment with horizontal scaling support.
-- Marketplace for community Strategies, Hooks, and Tools.
-
----
+> See **Project Scoping & Phased Development** for MVP strategy, simplifications, post-MVP roadmap (v0.8.0, v0.9.0+), and risk mitigation.
 
 ## User Journeys
 
-### Journey 1: "I want to customize the Agent loop"
+### Journey 1: Minh — "ReAct Agent from Zero" (Primary, Success Path)
 
-**Persona:** AI Researcher building a tree-search reasoning system.
+**Minh** — Senior Rust dev, fintech. Needs an agent that autonomously calls tools (stock price lookup, risk calculation) instead of hardcoded if/else logic.
 
-```
-Discovery → Reads README → Sees `AgentStrategy` trait
-→ Reads `examples/10-custom-strategy/` → Implements `MctsStrategy`
-→ Plugs into existing Agent: `agent.set_strategy(MctsStrategy::new())`
-→ Agent now uses MCTS instead of default sequential loop
-→ Shares implementation with community
-```
+**Opening:** Minh has a v0.6.0 agent using `DefaultStrategy` — agent only chats, no reasoning loop. Tool calling is manual.
+**Rising Action:** `cargo add traitclaw-strategies`, import `ReActStrategy`, swap `.strategy(ReActStrategy::new())` into the builder. 3 lines of code.
+**Climax:** Agent autonomously reasons "I need stock prices" → calls `StockPriceTool` → receives result → reasons "Now I need to calculate risk" → calls `RiskCalcTool` → synthesizes final answer. **No loop logic coded by hand.**
+**Resolution:** Production-ready reasoning agent in 10 minutes. Minh continues using custom tools — only the strategy changed.
 
-### Journey 2: "I need observability for production"
+### Journey 2: Linh — "Streaming Thoughts for Users" (Primary, Edge Case)
 
-**Persona:** Platform Engineer deploying TraitClaw agents at scale.
+**Linh** — AI engineer from Python, familiar with LangChain streaming. Wants ChatGPT-like UX — users see the agent think step-by-step.
 
-```
-Requirement → Need latency tracking + token cost monitoring
-→ Implements `AgentHook` with OpenTelemetry spans
-→ `before_tool_execute` starts span, `after_tool_execute` ends span
-→ `on_provider_end` records token usage metrics
-→ Plugs in: `agent.hook(OtelHook::new(exporter))`
-→ Full traces visible in Jaeger/DataDog without modifying agent logic
-```
+**Opening:** Linh builds a chatbot with TraitClaw. ReAct works but users wait 15-20s for the full response.
+**Rising Action:** Linh adds `StreamingOutputTransformer` — transforms each ReAct step into a streamed chunk. Attaches to agent builder.
+**Climax:** Users see: "🤔 Thinking: need to check weather..." → "🔧 Calling: WeatherTool..." → "📊 Observed: 25°C, clear sky" → "✅ The weather is..."
+**Resolution:** UX improves drastically — users engage more, feel in control. Linh didn't redesign the agent, just added a transformer.
 
-### Journey 3: "I want agents to collaborate intelligently"
+### Journey 3: Minh — "MCTS for Complex Decisions" (Primary, Advanced)
 
-**Persona:** Developer building a code review pipeline with multiple specialized agents.
+**Minh** — Needs an agent that evaluates multiple investment strategies in parallel then selects the best option.
 
-```
-Design → CodeAgent writes code, ReviewAgent reviews, DeployAgent deploys
-→ Implements `Router`: if review fails → route back to CodeAgent
-→ Uses `LeaderRouter` as starting point, modifies routing logic
-→ `traitclaw-team` handles message passing, Router handles "who's next"
-→ Non-linear multi-agent workflow without external graph libraries
-```
+**Opening:** ReAct follows a single reasoning path. Minh needs the agent to explore 5-10 different approaches and score each path.
+**Rising Action:** Swap `ReActStrategy` → `MctsStrategy::new().with_branches(5).with_depth(3)`. Same tools, same system prompt.
+**Climax:** Agent creates 5 parallel reasoning branches, each exploring a different investment approach, self-scores, backpropagates scores, selects the best-scoring path.
+**Resolution:** Portfolio recommendation quality improves thanks to tree search instead of single reasoning thread.
 
-### Journey 4: "My agent runs out of context window"
+### Journey 4: Power User — "Custom Strategy Coexistence" (Edge Case)
 
-**Persona:** Developer running long-lived chat agents that hit token limits.
+A user already has a custom `AgentStrategy` from v0.2.0. Upgrades to v0.7.0.
 
-```
-Problem → Agent crashes after 50+ messages (exceeds context window)
-→ Wraps existing memory: `CompressedMemory::wrap(SqliteMemory::new(...))`
-→ CompressedMemory auto-summarizes old messages when approaching 80% capacity
-→ Agent receives: [Summary of first 45 messages] + [Last 5 messages]
-→ Runs indefinitely without hitting context limits or excessive API costs
-```
+**Opening:** `cargo update traitclaw` — compile, zero errors. Custom strategy still works.
+**Rising Action:** User wants to try ReAct for one agent. Imports `ReActStrategy`, uses it for a new agent. Old agent keeps custom strategy.
+**Climax:** Both custom strategy and built-in ReAct run in the same pipeline. Zero conflict.
+**Resolution:** Progressive adoption — user gradually replaces custom strategies with built-in ones as appropriate.
 
----
+### Journey Requirements Summary
 
-## Feature Requirements
+| Journey | Capabilities Revealed |
+|---------|----------------------|
+| Journey 1 | `ReActStrategy`, tool-calling loop, strategy swap API |
+| Journey 2 | `StreamingOutputTransformer`, per-step streaming, transformer composition |
+| Journey 3 | `MctsStrategy`, parallel branching, scoring, configurable depth/width |
+| Journey 4 | Backward compatibility, strategy coexistence, zero breaking changes |
 
-### F1: `AgentStrategy` Trait
+## Innovation & Novel Patterns
 
-**Priority:** P0 (Must-have)
-**Crate:** `traitclaw-core`
+### Detected Innovation Areas
 
-```rust
-#[async_trait]
-pub trait AgentStrategy: Send + Sync + 'static {
-    async fn execute(
-        &self,
-        agent: &AgentRuntime,
-        input: &str,
-    ) -> Result<AgentOutput>;
-}
-```
+1. **First Rust AI framework with built-in reasoning strategies** — No existing Rust framework (Rig, Swarms-RS) ships ReAct, MCTS, or CoT built-in. Python frameworks (LangChain, CrewAI) provide these, but Rust has zero options. TraitClaw v0.7.0 establishes a new paradigm for the Rust AI ecosystem.
 
-| Requirement | Detail |
-|-------------|--------|
-| Dispatch | `Box<dyn AgentStrategy>` (dynamic) |
-| Default | `DefaultStrategy` — preserves current v0.1.0 loop behavior |
-| Builder integration | `Agent::builder().strategy(MctsStrategy::new())` |
-| Backward compat | If no strategy set, uses `DefaultStrategy` automatically |
+2. **Strategy-as-trait composability** — Users swap strategies the same way they swap providers — same interface, different implementation. Built-in strategies implement the same `AgentStrategy` trait users already use for custom strategies. Zero learning curve for strategy adoption.
 
-### F2: `AgentHook` Trait
+3. **Streaming-integrated reasoning** — `StreamingOutputTransformer` combined with reasoning loops enables streaming at thought-step granularity. No AI framework (Rust or Python) provides this level of streaming integration out of the box.
 
-**Priority:** P0 (Must-have)
-**Crate:** `traitclaw-core`
+### Validation Approach
 
-```rust
-pub trait AgentHook: Send + Sync + 'static {
-    async fn on_provider_start(&self, request: &CompletionRequest) {}
-    async fn on_provider_end(&self, response: &CompletionResponse, duration: Duration) {}
-    async fn before_tool_execute(&self, name: &str, args: &Value) -> HookAction { HookAction::Continue }
-    async fn after_tool_execute(&self, name: &str, result: &Value) {}
-    async fn on_stream_chunk(&self, chunk: &str) {}
-    async fn on_error(&self, error: &AgentError) {}
-}
+- **Built-in strategies** validated via runnable examples using mock providers (offline, deterministic)
+- **Performance** validated: `cargo build --timings` must show < 2% regression vs v0.6.0
+- **Strategy correctness** validated: unit tests verify reasoning loop behavior (Think→Act→Observe cycle count, tool call sequences, termination conditions)
+- **MCTS tree search** validated: tests verify branching factor, depth limits, and score backpropagation
+
+> See **Project Scoping & Phased Development → Risk Mitigation Strategy** for consolidated risk analysis.
+
+## Developer Tool Specific Requirements
+
+### Language & Platform
+
+- **Language:** Rust (edition 2021, MSRV 1.75+)
+- **Package manager:** Cargo / crates.io
+- **IDE integration:** Standard Rust tooling (rust-analyzer, cargo doc) — no IDE-specific plugins
+
+### Installation Methods
+
+```toml
+# Full batteries-included (default)
+traitclaw-strategies = "0.7.0"
+
+# Selective strategies
+traitclaw-strategies = { version = "0.7.0", default-features = false, features = ["react"] }
+
+# Via meta-crate re-export
+traitclaw = { version = "0.7.0", features = ["strategies"] }
 ```
 
-| Requirement | Detail |
-|-------------|--------|
-| Concurrency | All methods are `async fn` (Rust 1.75+ native) |
-| Default impl | All methods have empty default implementations (NoopHook) |
-| Interception | `before_tool_execute` returns `HookAction::Continue` or `HookAction::Block(reason)` |
-| Multiple hooks | `Vec<Box<dyn AgentHook>>` — multiple hooks can be registered |
-| Builder integration | `Agent::builder().hook(OtelHook::new()).hook(SecurityHook::new())` |
+### API Surface (New in v0.7.0)
 
-### F3: `Router` Trait
+| Type | Crate | Kind |
+|------|-------|------|
+| `ReActStrategy` | `traitclaw-strategies` | struct impl `AgentStrategy` |
+| `MctsStrategy` | `traitclaw-strategies` | struct impl `AgentStrategy` |
+| `MctsConfig` | `traitclaw-strategies` | config struct (branches, depth, scoring) |
+| `ChainOfThoughtStrategy` | `traitclaw-strategies` | struct impl `AgentStrategy` |
+| `StreamingOutputTransformer` | `traitclaw-core` | trait |
+| `ThoughtStep` | `traitclaw-strategies` | enum (Think, Act, Observe, Answer) |
 
-**Priority:** P0 (Must-have)
-**Crate:** `traitclaw-team`
+### Code Examples (New/Updated)
 
-```rust
-pub trait Router: Send + Sync + 'static {
-    fn route(&self, message: &TeamMessage, state: &TeamState) -> RoutingDecision;
-}
+| Example | Content |
+|---------|--------|
+| `11-custom-strategy` (upgrade) | Updated to v0.7.0 patterns, mock provider, working demo |
+| `25-react-strategy` (new) | ReAct loop with tool calling |
+| `26-mcts-strategy` (new) | MCTS tree search with branch configuration |
+| `27-chain-of-thought` (new) | CoT reasoning with streaming output |
+| `28-streaming-transformer` (new) | StreamingOutputTransformer usage |
 
-pub enum RoutingDecision {
-    SendTo(AgentId),
-    Broadcast,
-    Complete(String),
-}
-```
+### Migration Guide
 
-| Requirement | Detail |
-|-------------|--------|
-| Design | Simple trait — no graph engine dependency |
-| Defaults | `SequentialRouter` (round-robin), `LeaderRouter` (coordinator pattern) |
-| No new deps | No `petgraph` or similar — users bring their own if needed |
-| Builder integration | `Team::builder().router(CustomRouter::new())` |
+- `docs/migration-v0.6-to-v0.7.md` — Documents all new types, zero breaking changes, adoption examples
 
-### F4: `CompressedMemory` Decorator
+## Project Scoping & Phased Development
 
-**Priority:** P1 (Should-have)
-**Crate:** `traitclaw-core` or new `traitclaw-memory-compressed`
+### MVP Strategy & Philosophy
 
-```rust
-pub struct CompressedMemory<M: Memory> {
-    inner: M,
-    compressor: Box<dyn Provider>,  // cheap LLM for summarization
-    threshold: f32,                  // 0.8 = compress at 80% capacity
-}
+**MVP Approach:** Platform MVP — Deliver complete reasoning strategy infrastructure that enables users to immediately build smarter agents. Not a minimal demo, but a complete toolkit.
 
-impl<M: Memory> Memory for CompressedMemory<M> { /* delegates + compresses */ }
-```
+### MVP Feature Set (Phase 1 — v0.7.0)
 
-| Requirement | Detail |
-|-------------|--------|
-| Pattern | Decorator — wraps any `Memory` implementation |
-| Stackable | `CompressedMemory::wrap(CachedMemory::wrap(SqliteMemory::new(...)))` |
-| Trigger | Auto-compresses when message count exceeds threshold % of context window |
-| Transparency | Downstream code sees a normal `Memory` — no API changes |
+**Must-Have (Go/No-Go):**
 
-### F5: Examples
+1. `ReActStrategy` — Core reasoning loop (supports Journey 1, 2)
+2. `MctsStrategy` — Tree search reasoning (supports Journey 3)
+3. `ChainOfThoughtStrategy` — Step reasoning (completes strategy trio)
+4. `StreamingOutputTransformer` trait — Streaming support (supports Journey 2)
+5. `traitclaw-strategies` crate with feature flags
+6. Per-strategy working examples (25–28)
+7. Migration guide v0.6→v0.7
+8. Zero breaking changes verified
 
-**Priority:** P0 (Must-have)
+**Simplifications Accepted for MVP:**
 
-| Example | Demonstrates |
-|---------|-------------|
-| `10-custom-strategy/` | Implementing a simple ReAct-style strategy |
-| `11-lifecycle-hooks/` | Logging hook, timing hook, security interception hook |
-| `12-custom-router/` | State-machine router for a code review pipeline |
-| `13-compressed-memory/` | Long-running agent with automatic context management |
+- MCTS scoring: ship with default scoring function, custom `ScoringFn` in v0.7.1
+- CoT step count: fixed max steps, adaptive termination in v0.7.1
 
----
+### Post-MVP Features (Phase 2 — v0.8.0)
+
+- DAG execution engine
+- Config-driven agent spawn (YAML/TOML)
+- `OrchestrationStrategy` trait
+- Retry/checkpoint/fallback agents
+
+### Expansion (Phase 3 — v0.9.0+)
+
+- Distributed agent execution
+- WASM deployment target
+- Inter-agent typed contracts
+- OpenTelemetry integration
+
+### Risk Mitigation Strategy
+
+| Risk Type | Risk | Mitigation |
+|-----------|------|------------|
+| **Technical** | MCTS tree search complexity may delay release | Feature-gated; ship ReAct + CoT first, MCTS can land as v0.7.1 patch if needed |
+| **Technical** | `StreamingOutputTransformer` trait design may conflict with existing `OutputTransformer` | Additive-only design — new trait, does not modify existing chain |
+| **Technical** | Strategy API stability | Implement existing `AgentStrategy` trait — no new API surface to stabilize |
+| **Technical** | Feature flag overhead | Default all-on for batteries-included DX; `default-features = false` for minimal builds |
+| **Market** | Users may not need MCTS for typical agentic workloads | Feature-gated opt-in; no binary cost if unused |
+| **Resource** | Solo developer; large scope | Priority order: ReAct (highest value) → CoT → Streaming → MCTS |
+
+## Functional Requirements
+
+### Reasoning Strategy Core
+
+- **FR1:** Developer can instantiate a `ReActStrategy` with default configuration and assign it to an agent via builder
+- **FR2:** Developer can configure `ReActStrategy` max iterations (loop limit) and tool-calling behavior
+- **FR3:** `ReActStrategy` can autonomously execute Think→Act→Observe loops until answering or hitting max iterations
+- **FR4:** Developer can instantiate a `MctsStrategy` with configurable branch count and search depth
+- **FR5:** `MctsStrategy` can spawn parallel reasoning branches, score each path, and select the highest-scoring result
+- **FR6:** Developer can instantiate a `ChainOfThoughtStrategy` with configurable max steps
+- **FR7:** `ChainOfThoughtStrategy` can inject step-by-step reasoning into the agent's prompt and return structured thought steps
+
+### Strategy Interchangeability
+
+- **FR8:** Developer can swap any built-in strategy for another by changing only the strategy constructor — no other code changes required
+- **FR9:** Developer can use built-in strategies alongside custom `AgentStrategy` implementations in the same application
+- **FR10:** All built-in strategies implement the existing `AgentStrategy` trait without modifications to the trait interface
+
+### Streaming Output
+
+- **FR11:** Developer can implement `StreamingOutputTransformer` trait to transform agent output as it streams
+- **FR12:** `StreamingOutputTransformer` can be composed into the agent builder pipeline alongside existing `OutputTransformer`
+- **FR13:** Developer can use `StreamingOutputTransformer` with `ReActStrategy` to stream individual thought steps in real-time
+
+### Crate & Feature Management
+
+- **FR14:** Developer can add `traitclaw-strategies` as a standalone dependency via `cargo add`
+- **FR15:** Developer can selectively enable/disable individual strategies via Cargo feature flags
+- **FR16:** All strategies are enabled by default (batteries-included); developer can opt-out with `default-features = false`
+- **FR17:** `traitclaw-strategies` re-exports through the `traitclaw` meta-crate via `features = ["strategies"]`
+
+### Thought Step Observability
+
+- **FR18:** `ReActStrategy` emits typed `ThoughtStep` events (Think, Act, Observe, Answer) during execution
+- **FR19:** Developer can inspect `ThoughtStep` sequence after strategy execution for debugging/logging
+- **FR20:** `MctsStrategy` exposes branch scores and selected path for post-execution analysis
+
+### Backward Compatibility
+
+- **FR21:** All v0.6.0 public APIs remain unchanged and functional in v0.7.0
+- **FR22:** All existing examples (1–24) compile and run without modification on v0.7.0
+- **FR23:** Custom `AgentStrategy` implementations created against v0.2.0+ trait work without changes
+
+### Documentation & Examples
+
+- **FR24:** Each built-in strategy has a dedicated runnable example demonstrating core usage
+- **FR25:** `StreamingOutputTransformer` has a dedicated example demonstrating streaming thought steps
+- **FR26:** Migration guide documents all new types and adoption path from v0.6.0
+- **FR27:** All new public types have complete rustdoc documentation with code examples
 
 ## Non-Functional Requirements
 
 ### Performance
 
-- Zero overhead on default path: When using `DefaultStrategy` + `NoopHook`, performance must be identical to v0.1.0.
-- Hook overhead budget: Each hook call adds no more than 1μs when hooks are registered but have empty implementations.
-- Dynamic dispatch: `Box<dyn AgentStrategy>` vtable lookup is acceptable (nanoseconds vs. LLM milliseconds).
+| NFR | Metric | Target |
+|-----|--------|--------|
+| **NFR1: Compile time** | `cargo build --timings` delta vs v0.6.0 | < 2% increase with default features |
+| **NFR2: Binary size** | `cargo bloat` delta vs v0.6.0 | < 5% increase with default features |
+| **NFR3: Runtime overhead** | ReAct loop latency per iteration (excluding LLM call) | < 1ms per Think→Act→Observe cycle |
+| **NFR4: MCTS parallelism** | Tokio task spawn overhead per branch | < 100μs per branch spawn |
+| **NFR5: Streaming latency** | Time from first token to first `StreamingOutputTransformer` emission | < 10ms |
+| **NFR6: Feature-gated build** | Build time with `default-features = false` + single strategy | < 50% of full build time |
 
-### Compatibility
+### Integration
 
-- **Backward compatibility:** v0.1.0 code compiles without changes on v0.2.0.
-- **MSRV:** Rust 1.75+ (required for `async fn` in traits).
-- **Semver:** This is a minor version bump (0.1.0 → 0.2.0). No breaking changes.
-
-### Documentation
-
-- All public traits and methods must have rustdoc with examples.
-- Migration guide from v0.1.0 to v0.2.0.
-- Architecture Decision Records (ADR) published in `/docs/adr/`.
-
-### Testing
-
-- Unit tests for all default implementations (DefaultStrategy, NoopHook, SequentialRouter, LeaderRouter).
-- Integration tests demonstrating custom Strategy/Hook/Router.
-- Backward compatibility test: v0.1.0 example code compiles unmodified.
-
----
-
-## Technical Constraints
-
-### Architecture Decisions (from ADR Session)
-
-| ADR | Decision | Rationale |
-|-----|----------|-----------|
-| ADR-1 | `Box<dyn AgentStrategy>` (dynamic dispatch) | LLM latency (200-2000ms) >> vtable overhead (ns). Simpler API. |
-| ADR-2 | `async fn` hooks (Rust 1.75+ native) | No `#[async_trait]` needed. Non-blocking observability. |
-| ADR-3 | Simple `trait Router` (no graph dependency) | Minimal deps. Users bring `petgraph` if needed. |
-| ADR-4 | Decorator pattern for `CompressedMemory` | Open/Closed Principle. Stackable wrappers. No API changes. |
-
-### Dependency Policy
-
-- **No new required dependencies** for core functionality.
-- `CompressedMemory` may live in a feature-gated crate to avoid coupling core to a specific LLM provider for summarization.
-- All new traits go into `traitclaw-core`. All implementations that require additional dependencies go into feature-gated crates.
-
-### Crate Impact Map
-
-| Crate | Changes |
-|-------|---------|
-| `traitclaw-core` | Add `AgentStrategy`, `AgentHook` traits + defaults. Modify `Agent` struct to accept Strategy and Hook. |
-| `traitclaw-team` | Add `Router` trait + `SequentialRouter`, `LeaderRouter`. Refactor orchestration to use Router. |
-| `traitclaw` (meta) | Re-export new traits. Update feature flags if needed. |
-| New examples | `10-custom-strategy/`, `11-lifecycle-hooks/`, `12-custom-router/`, `13-compressed-memory/` |
-
----
-
-## Risks & Mitigations
-
-| Risk | Likelihood | Impact | Mitigation |
-|------|-----------|--------|------------|
-| Breaking backward compatibility | Medium | High | Comprehensive test suite. All new traits have default impls. Run v0.1.0 examples against v0.2.0. |
-| Over-engineering Strategy trait | Medium | Medium | Start with simplest possible interface. Add complexity only when real use cases demand it (YAGNI). |
-| Async Hook performance overhead | Low | Medium | Benchmark with empty hooks. Budget: < 1μs per call. Use `tokio::spawn` for expensive hooks if needed. |
-| CompressedMemory summarization quality | Medium | Medium | Ship as opt-in feature. Provide clear docs on choosing the summarization LLM. Allow users to implement their own compression strategy. |
-| Community adoption friction | Medium | Medium | Comprehensive examples + migration guide. Announce on r/rust and Rust AI communities. |
-
----
-
-## Release Plan
-
-### Phase 1: Core Traits (Week 1-2)
-
-- [ ] Design and implement `AgentStrategy` trait in `traitclaw-core`
-- [ ] Implement `DefaultStrategy` (extract current loop logic)
-- [ ] Design and implement `AgentHook` trait in `traitclaw-core`
-- [ ] Implement `NoopHook` default
-- [ ] Modify `Agent` struct and `AgentBuilder` to accept Strategy and Hook
-- [ ] Backward compatibility tests
-
-### Phase 2: Team & Memory (Week 3-4)
-
-- [ ] Design and implement `Router` trait in `traitclaw-team`
-- [ ] Implement `SequentialRouter` and `LeaderRouter`
-- [ ] Refactor existing team orchestration to use Router
-- [ ] Implement `CompressedMemory` decorator
-- [ ] Integration tests for Router and CompressedMemory
-
-### Phase 3: Examples & Docs (Week 5-6)
-
-- [ ] Create `examples/10-custom-strategy/`
-- [ ] Create `examples/11-lifecycle-hooks/`
-- [ ] Create `examples/12-custom-router/`
-- [ ] Create `examples/13-compressed-memory/`
-- [ ] Write migration guide (v0.1.0 → v0.2.0)
-- [ ] Publish ADRs to `/docs/adr/`
-- [ ] Update README with v0.2.0 features
-
-### Phase 4: Release (Week 7)
-
-- [ ] Version bump all crates to 0.2.0
-- [ ] Final CI/CD checks
-- [ ] Publish to crates.io
-- [ ] Announce on r/rust, Rust AI communities
+| NFR | Requirement |
+|-----|-------------|
+| **NFR7: MSRV** | Rust 1.75+ — no nightly features required |
+| **NFR8: Async runtime** | `tokio` only (consistent with existing crate ecosystem) |
+| **NFR9: Dependency budget** | Zero new required dependencies for `traitclaw-strategies` beyond `traitclaw-core` and `tokio` |
+| **NFR10: API ergonomics** | All strategy constructors follow builder pattern consistent with `AgentBuilder` |
+| **NFR11: Error types** | Strategy errors use existing `TraitClawError` enum — no new top-level error types |
+| **NFR12: Trait object safety** | Built-in strategies must be object-safe (`dyn AgentStrategy`) for dynamic dispatch |
