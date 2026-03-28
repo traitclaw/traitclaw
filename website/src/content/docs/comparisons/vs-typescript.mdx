@@ -1,0 +1,70 @@
+---
+title: vs TypeScript Frameworks
+description: How TraitClaw compares to LangChain, Vercel AI SDK, and other TypeScript AI frameworks.
+---
+
+## At a Glance
+
+| Feature | TraitClaw (Rust) | LangChain (Python/TS) | Vercel AI SDK (TS) |
+|---------|:-------:|:----------:|:---------:|
+| **Type Safety** | Compile-time | Runtime | Partial (Zod) |
+| **Tool Schemas** | `#[derive(Tool)]` auto-generated | Manual dict/schema | Manual Zod schema |
+| **Memory** | Built-in (SQLite, Compressed) | External (Redis, etc.) | External |
+| **Streaming** | `async Stream` with typed events | Callbacks/iterators | React hooks |
+| **Binary Size** | ~5MB static binary | ~200MB+ with node_modules | ~100MB+ |
+| **Cold Start** | &lt;10ms | ~500ms+ | ~200ms+ |
+| **Memory Usage** | ~10MB | ~100MB+ | ~50MB+ |
+| **Concurrency** | Tokio (millions of tasks) | Event loop (single-threaded) | Event loop |
+| **Deploy** | Single binary, anywhere | Container + runtime | Vercel/Node.js |
+
+## Type Safety: Compile-Time vs Runtime
+
+### TraitClaw
+
+```rust
+// Error caught at COMPILE TIME
+#[derive(Tool)]
+#[tool(description = "Calculate")]
+struct Calculator {
+    expression: String,  // Guaranteed to be present
+}
+```
+
+### LangChain
+
+```python
+# Error caught at RUNTIME (or never)
+class Calculator(BaseTool):
+    name = "calculator"
+    description = "Calculate"
+
+    def _run(self, expression: str):
+        # What if expression is None? 🤷
+        return eval(expression)  # Also: security vulnerability
+```
+
+## Performance
+
+TraitClaw agents are compiled to native machine code:
+
+- **No garbage collector** pauses
+- **No interpreter** overhead
+- **Predictable latency** — critical for real-time applications
+- **Minimal memory** — run hundreds of agents on a single server
+
+## When to Choose TraitClaw
+
+✅ **Choose TraitClaw when:**
+
+- You need **production-grade reliability** with compile-time guarantees
+- You're deploying to **edge devices**, embedded systems, or resource-constrained environments
+- You want **single binary deployment** without runtime dependencies
+- You need **high-throughput** agent processing (thousands of concurrent agents)
+- Your team already uses Rust or values type safety
+
+❌ **Choose TypeScript/Python when:**
+
+- You need **rapid prototyping** and don't mind runtime errors
+- Your team has no Rust experience and the timeline is tight
+- You're building a **simple chatbot** that doesn't need tool calling or multi-agent orchestration
+- You need **ecosystem breadth** (more LLM providers, more integrations)

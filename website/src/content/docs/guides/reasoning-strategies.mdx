@@ -1,0 +1,79 @@
+---
+title: Reasoning Strategies
+description: ReAct, Chain-of-Thought, and MCTS reasoning strategies.
+---
+
+TraitClaw supports three built-in reasoning strategies via the `AgentStrategy` trait, plus the ability to build custom strategies.
+
+## Default Strategy
+
+By default, agents use `DefaultStrategy` — a simple loop of generate → tool call → generate until the LLM returns a text response.
+
+## ReAct (Reasoning + Acting)
+
+ReAct interleaves thinking and acting in a structured loop:
+
+```
+Think → Act → Observe → Think → Act → Observe → ... → Answer
+```
+
+```rust
+use traitclaw_strategies::ReActStrategy;
+
+let strategy = ReActStrategy::builder()
+    .max_steps(10)
+    .build();
+
+let agent = Agent::builder()
+    .provider(provider)
+    .strategy(strategy)
+    .tool(WebSearch)
+    .tool(Calculator)
+    .build()?;
+```
+
+## Chain-of-Thought (CoT)
+
+CoT forces the LLM to show its reasoning step by step:
+
+```rust
+use traitclaw_strategies::CotStrategy;
+
+let strategy = CotStrategy::builder()
+    .max_steps(5)
+    .build();
+```
+
+## Monte Carlo Tree Search (MCTS)
+
+MCTS explores multiple reasoning paths in parallel and selects the best:
+
+```rust
+use traitclaw_strategies::MctsStrategy;
+
+let strategy = MctsStrategy::builder()
+    .num_simulations(8)
+    .exploration_weight(1.4)
+    .build();
+```
+
+## Custom Strategy
+
+Implement `AgentStrategy` for your own reasoning loop:
+
+```rust
+use traitclaw_core::{AgentStrategy, AgentRuntime, AgentOutput};
+
+#[async_trait]
+impl AgentStrategy for MyStrategy {
+    async fn execute(
+        &self,
+        runtime: &AgentRuntime,
+        input: &str,
+    ) -> Result<AgentOutput> {
+        // Your custom reasoning loop
+        let output = runtime.generate(input).await?;
+        Ok(output)
+    }
+}
+```

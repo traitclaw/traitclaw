@@ -1,0 +1,86 @@
+---
+title: Memory
+description: Conversation persistence — from ephemeral to production-grade.
+---
+
+Memory determines how your agent remembers past conversations. TraitClaw provides three built-in implementations and a trait for building custom ones.
+
+## Memory Backends
+
+| Backend | Persistence | Use Case |
+|---------|:-----------:|----------|
+| `InMemoryMemory` | ❌ Process lifetime | Prototyping, stateless APIs |
+| `SqliteMemory` | ✅ Disk | Production single-node |
+| `CompressedMemory` | ✅ + Compression | Long conversations, cost optimization |
+
+## InMemoryMemory (Default)
+
+Zero-config, works out of the box:
+
+```rust
+// This is the default — no setup needed
+let agent = Agent::builder()
+    .provider(provider)
+    .build()?;
+
+// Explicit
+let agent = Agent::builder()
+    .provider(provider)
+    .memory(InMemoryMemory::new())
+    .build()?;
+```
+
+## SqliteMemory
+
+Persistent conversations with full-text search:
+
+```rust
+use traitclaw_memory_sqlite::SqliteMemory;
+
+let memory = SqliteMemory::new("./agent.db")?;
+
+let agent = Agent::builder()
+    .provider(provider)
+    .memory(memory)
+    .session("user-123")  // Session isolation
+    .build()?;
+
+// Conversations persist across restarts
+let output = agent.run("Remember: my name is Alice").await?;
+// ... restart app ...
+let output = agent.run("What's my name?").await?;
+// "Your name is Alice!"
+```
+
+## CompressedMemory
+
+For long conversations, CompressedMemory automatically summarizes older messages to save tokens:
+
+```rust
+use traitclaw_core::CompressedMemory;
+
+let memory = CompressedMemory::new(
+    inner_memory,
+    compression_provider,  // LLM used for summarization
+)
+.max_tokens(4000)          // Compress when context exceeds this
+.keep_recent(5);           // Always keep the 5 most recent messages
+```
+
+## The Memory Trait
+
+Build custom backends for Redis, PostgreSQL, DynamoDB, etc.:
+
+```rust
+#[async_trait]
+pub trait Memory: Send + Sync {
+    /// Retrieve all messages for a session
+    async fn get_messages(&self, session_id: &str) -> Result<Vec<Message>>;
+
+    /// Add a message to a session
+    async fn add_message(&self, session_id: &str, message: Message) -> Result<()>;
+
+    /// Clear all messages for a session
+    async fn clear(&self, session_id: &str) -> Result<()>;
+}
+```

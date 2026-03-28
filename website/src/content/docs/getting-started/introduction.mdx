@@ -1,0 +1,68 @@
+---
+title: Introduction
+description: What is TraitClaw and why does it exist?
+---
+
+# What is TraitClaw?
+
+**TraitClaw** is a Rust framework for building AI agents — intelligent programs that can reason, use tools, maintain memory, and collaborate with other agents.
+
+Unlike Python/TypeScript AI frameworks that rely on runtime validation and garbage collection, TraitClaw leverages Rust's type system to catch errors at **compile time**, not in production.
+
+## The 5-Line Agent
+
+```rust
+let agent = Agent::builder()
+    .provider(OpenAiCompatProvider::openai("gpt-4o-mini", api_key))
+    .system("You are a helpful assistant")
+    .build()?;
+
+let output = agent.run("Hello!").await?;
+```
+
+That's it. No boilerplate, no configuration files, no dependency injection frameworks.
+
+## Design Philosophy
+
+### 1. Trait-Based Composition
+
+Every capability in TraitClaw is a **trait**. Want to swap your LLM provider? Implement `Provider`. Need custom memory? Implement `Memory`. This means:
+
+- **No vendor lock-in** — switch from OpenAI to Anthropic by changing one line
+- **No hidden magic** — every behavior is explicit and inspectable
+- **Full testability** — mock any component with a test implementation
+
+### 2. Simple by Default, Powerful When Needed
+
+The default `Agent` works out of the box with sensible defaults. But when you need advanced control:
+
+- **`AgentStrategy`** — customize the entire execution loop (ReAct, CoT, MCTS)
+- **`AgentHook`** — intercept every step for logging, metrics, or modification
+- **`Guard` / `Hint` / `Tracker`** — add safety, guidance, and observability
+
+### 3. Zero-Cost Abstractions
+
+TraitClaw uses static dispatch where possible and dynamic dispatch (`Box<dyn Trait>`) only where flexibility is required (tool registries, provider selection). The result:
+
+- **No garbage collector** — predictable latency
+- **Single static binary** — deploy anywhere
+- **Minimal memory footprint** — suitable for edge devices
+
+## Feature Overview
+
+| Category | Features | Status |
+|----------|----------|:------:|
+| **Core** | Agent, Builder, 8 Traits, Streaming, Structured Output | ✅ |
+| **Reasoning** | ReAct, Chain-of-Thought, MCTS, Custom Strategies | ✅ |
+| **Providers** | OpenAI, Anthropic, Ollama, Groq, Mistral, vLLM | ✅ |
+| **Memory** | In-Memory, SQLite, Compressed (LLM + Rule-Based) | ✅ |
+| **Safety** | Guards, Hints, Trackers, Steering | ✅ |
+| **Orchestration** | Multi-Agent Teams, Routers, Factory, Pool | ✅ |
+| **Integration** | MCP Client, RAG Pipeline, Evaluation Framework | ✅ |
+| **Observability** | `tracing` Integration, Lifecycle Hooks | ✅ |
+
+## Next Steps
+
+import { LinkCard } from '@astrojs/starlight/components';
+
+<LinkCard title="Installation →" href="/traitclaw/getting-started/installation/" description="Add TraitClaw to your Rust project." />

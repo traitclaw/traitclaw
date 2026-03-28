@@ -1,0 +1,108 @@
+---
+title: Installation
+description: Add TraitClaw to your Rust project.
+---
+
+## Requirements
+
+- **Rust 1.75+** (MSRV — Minimum Supported Rust Version)
+- **Tokio** runtime (TraitClaw is async-first)
+
+## Quick Install
+
+```bash
+cargo add traitclaw traitclaw-openai-compat tokio anyhow
+```
+
+This gives you the core framework with the OpenAI-compatible provider (works with OpenAI, Ollama, Groq, Mistral, and vLLM).
+
+## Feature Flags
+
+The `traitclaw` meta-crate re-exports everything through feature flags:
+
+```toml
+[dependencies]
+# Minimal — just core + macros + OpenAI-compatible provider
+traitclaw = "1.0"
+
+# With specific features
+traitclaw = { version = "1.0", features = ["steering", "sqlite", "mcp"] }
+
+# Everything
+traitclaw = { version = "1.0", features = ["full"] }
+```
+
+### Available Features
+
+| Feature | Crate | Default | Description |
+|---------|-------|:-------:|-------------|
+| `openai-compat` | `traitclaw-openai-compat` | ✅ | OpenAI, Ollama, Groq, Mistral, vLLM |
+| `macros` | `traitclaw-macros` | ✅ | `#[derive(Tool)]` proc macro |
+| `steering` | `traitclaw-steering` | ❌ | Guards, Hints, Trackers |
+| `sqlite` | `traitclaw-memory-sqlite` | ❌ | SQLite persistent memory |
+| `mcp` | `traitclaw-mcp` | ❌ | Model Context Protocol client |
+| `rag` | `traitclaw-rag` | ❌ | RAG pipeline (BM25, embeddings) |
+| `team` | `traitclaw-team` | ❌ | Multi-agent orchestration |
+| `eval` | `traitclaw-eval` | ❌ | Evaluation & benchmarking |
+| `strategies` | `traitclaw-strategies` | ❌ | ReAct, CoT, MCTS reasoning |
+| `full` | All of the above | ❌ | Everything |
+
+## Provider Setup
+
+### OpenAI
+
+```bash
+export OPENAI_API_KEY="sk-..."
+```
+
+```rust
+use traitclaw_openai_compat::OpenAiCompatProvider;
+
+let provider = OpenAiCompatProvider::openai("gpt-4o-mini", std::env::var("OPENAI_API_KEY")?);
+```
+
+### Anthropic
+
+```bash
+cargo add traitclaw-anthropic
+export ANTHROPIC_API_KEY="sk-ant-..."
+```
+
+```rust
+use traitclaw_anthropic::AnthropicProvider;
+
+let provider = AnthropicProvider::new("claude-sonnet-4-20250514", std::env::var("ANTHROPIC_API_KEY")?);
+```
+
+### Ollama (Local)
+
+No API key needed — just run Ollama locally:
+
+```bash
+ollama pull llama3.2
+```
+
+```rust
+use traitclaw_openai_compat::OpenAiCompatProvider;
+
+let provider = OpenAiCompatProvider::ollama("llama3.2");
+```
+
+### Groq / Mistral / vLLM
+
+```rust
+// Groq
+let provider = OpenAiCompatProvider::groq("llama-3.3-70b-versatile", groq_key);
+
+// Mistral
+let provider = OpenAiCompatProvider::new("https://api.mistral.ai/v1", "mistral-large", key);
+
+// Any OpenAI-compatible endpoint
+let provider = OpenAiCompatProvider::new("http://localhost:8000/v1", "my-model", "no-key");
+```
+
+## Next Steps
+
+import { LinkCard } from '@astrojs/starlight/components';
+
+<LinkCard title="Quick Start →" href="/traitclaw/getting-started/quickstart/" description="Build your first agent in 5 minutes." />

@@ -1,0 +1,43 @@
+---
+title: RAG Pipeline
+description: Retrieval-Augmented Generation with BM25 and embeddings.
+---
+
+The `traitclaw-rag` crate provides a modular RAG pipeline with pluggable retrievers and chunkers.
+
+## Quick Start
+
+```rust
+use traitclaw_rag::{RagContextManager, KeywordRetriever, FixedSizeChunker};
+
+// 1. Chunk your documents
+let chunker = FixedSizeChunker::new(512);
+let chunks = chunker.chunk(&document_text);
+
+// 2. Create a retriever
+let retriever = KeywordRetriever::new(chunks);
+
+// 3. Use as a ContextManager
+let rag = RagContextManager::new(retriever);
+
+let agent = Agent::builder()
+    .provider(provider)
+    .context_manager(rag)
+    .build()?;
+```
+
+## Retrievers
+
+| Retriever | Method | Best For |
+|-----------|--------|----------|
+| `KeywordRetriever` | BM25 | Fast keyword matching |
+| `EmbeddingRetriever` | Cosine similarity | Semantic search |
+| `HybridRetriever` | BM25 + Embeddings | Best of both |
+
+## Chunkers
+
+| Chunker | Strategy |
+|---------|----------|
+| `FixedSizeChunker` | Fixed token/char count |
+| `SentenceChunker` | Split on sentence boundaries |
+| `RecursiveChunker` | Hierarchical splitting |

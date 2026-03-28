@@ -1,0 +1,51 @@
+---
+title: Multi-Agent Teams
+description: Orchestrate multiple agents working together.
+---
+
+TraitClaw's `traitclaw-team` crate enables multi-agent collaboration with routing, delegation, and verification.
+
+## Quick Example
+
+```rust
+use traitclaw_team::{Team, AgentRole, SequentialRouter};
+
+let team = Team::builder()
+    .name("research")
+    .router(SequentialRouter)
+    .add_role(AgentRole::new("researcher", researcher_agent))
+    .add_role(AgentRole::new("writer", writer_agent))
+    .add_role(AgentRole::new("reviewer", reviewer_agent))
+    .build()?;
+
+let result = team.run("Write a report on quantum computing").await?;
+```
+
+## Router Strategies
+
+| Router | Behavior |
+|--------|----------|
+| `SequentialRouter` | Runs agents in order |
+| `LeaderRouter` | LLM decides which agent handles each task |
+| `ConditionalRouter` | Rule-based routing with conditions |
+| Custom | Implement `TeamRouter` trait |
+
+## Agent Factory & Pool
+
+```rust
+use traitclaw_core::{AgentFactory, AgentPool};
+
+// Factory creates agents with shared provider
+let factory = AgentFactory::new(provider.clone())
+    .with_tools(vec![WebSearch, Calculator]);
+
+let researcher = factory.create("researcher", "Research topics thoroughly");
+let writer = factory.create("writer", "Write clear, concise content");
+
+// Pool manages named agents
+let pool = AgentPool::new()
+    .add("researcher", researcher)
+    .add("writer", writer);
+
+let agent = pool.get("researcher").unwrap();
+```

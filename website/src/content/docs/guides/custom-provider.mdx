@@ -1,0 +1,100 @@
+---
+title: Custom Provider
+description: Build your own LLM provider for any backend.
+---
+
+Implement the `Provider` trait to connect TraitClaw to any LLM — local models, enterprise APIs, or custom inference servers.
+
+See the [Providers concept page](/traitclaw/concepts/providers/) for the full trait definition and built-in providers.
+
+## Step-by-Step
+
+### 1. Create the Provider Struct
+
+```rust
+use traitclaw_core::prelude::*;
+use reqwest::Client;
+
+pub struct LlamaProvider {
+    endpoint: String,
+    model: String,
+    client: Client,
+}
+
+impl LlamaProvider {
+    pub fn new(endpoint: &str, model: &str) -> Self {
+        Self {
+            endpoint: endpoint.to_string(),
+            model: model.to_string(),
+            client: Client::new(),
+        }
+    }
+}
+```
+
+### 2. Implement Provider
+
+```rust
+#[async_trait::async_trait]
+impl Provider for LlamaProvider {
+    async fn generate(
+        &self,
+        messages: &[Message],
+        config: &AgentConfig,
+    ) -> Result<CompletionResponse> {
+        let body = serde_json::json!({
+            "model": self.model,
+            "messages": messages.iter().map(|m| {
+                serde_json::json!({
+                    "role": m.role.as_str(),
+                    "content": m.content_text()
+                })
+            }).collect::<Vec<_>>(),
+            "max_tokens": config.max_tokens.unwrap_or(4096),
+        });
+
+        let resp = self.client
+            .post(&format!("{}/v1/chat/completions", self.endpoint))
+            .json(&body)
+            .send()
+            .await?
+            .json::<serde_json::Value>()
+            .await?;
+
+        // Parse response into CompletionResponse
+        let text = resp["choices"][0]["message"]["content"]
+            .as_str()
+            .unwrap_or_default();
+
+        Ok(CompletionResponse::text(text))
+    }
+
+    async fn stream(
+        &self,
+        messages: &[Message],
+        config: &AgentConfig,
+    ) -> Result<BoxStream<'static, Result<StreamEvent>>> {
+        // For streaming, return SSE events as StreamEvent items
+        todo!("Implement SSE parsing")
+    }
+
+    fn model_info(&self) -> ModelInfo {
+        ModelInfo {
+            name: self.model.clone(),
+            context_window: 8192,
+            ..Default::default()
+        }
+    }
+}
+```
+
+### 3. Use It
+
+```rust
+let provider = LlamaProvider::new("http://localhost:11434", "llama3.2");
+
+let agent = Agent::builder()
+    .provider(provider)
+    .system("You are a local AI assistant")
+    .build()?;
+```

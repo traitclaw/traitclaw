@@ -1,0 +1,37 @@
+---
+title: MCP Integration
+description: Connect to Model Context Protocol servers for dynamic tool discovery.
+---
+
+The `traitclaw-mcp` crate implements the [Model Context Protocol](https://modelcontextprotocol.io/) client, enabling your agent to discover and use tools from MCP servers.
+
+## Quick Start
+
+```rust
+use traitclaw_mcp::{McpServer, McpToolRegistry};
+
+// Connect to an MCP server via stdio
+let server = McpServer::stdio("npx", &["-y", "@mcp/server-filesystem", "."]).await?;
+
+// Convert MCP tools to TraitClaw tools
+let registry = McpToolRegistry::from_server(server).await?;
+
+let agent = Agent::builder()
+    .provider(provider)
+    .tool_registry(registry)
+    .build()?;
+
+// The agent can now use all tools from the MCP server!
+```
+
+## Multi-Server
+
+```rust
+use traitclaw_mcp::MultiServerMcpRegistry;
+
+let registry = MultiServerMcpRegistry::new()
+    .add_server("fs", McpServer::stdio("npx", &["-y", "@mcp/server-filesystem", "."]).await?)
+    .add_server("db", McpServer::stdio("npx", &["-y", "@mcp/server-postgres", db_url]).await?)
+    .build()
+    .await?;
+```

@@ -1,0 +1,63 @@
+---
+title: Welcome to TraitClaw
+description: A Rust AI Agent Framework — Simple by default, powerful when needed.
+template: splash
+hero:
+  tagline: Build production-grade AI agents in Rust with type-safe tools, streaming, persistent memory, multi-agent teams, and reasoning strategies — all with zero-cost abstractions.
+  actions:
+    - text: Get Started
+      link: /traitclaw/getting-started/introduction/
+      icon: right-arrow
+      variant: primary
+    - text: View on GitHub
+      link: https://github.com/traitclaw/traitclaw
+      icon: external
+      variant: minimal
+---
+
+import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+## Why TraitClaw?
+
+<CardGrid>
+  <Card title="🧩 Composable Traits" icon="puzzle">
+    8 core traits (`Provider`, `Tool`, `Memory`, `Guard`, `Hint`, `Tracker`, `ContextManager`, `OutputTransformer`) compose into any agent topology. No vendor lock-in.
+  </Card>
+  <Card title="🔧 Type-Safe Tools" icon="setting">
+    `#[derive(Tool)]` generates JSON schemas from Rust structs at compile time. Catch tool errors before runtime, not in production.
+  </Card>
+  <Card title="🧠 Multi-Strategy Reasoning" icon="rocket">
+    Built-in ReAct, Chain-of-Thought, and Monte Carlo Tree Search strategies via the `AgentStrategy` trait. Or build your own.
+  </Card>
+  <Card title="🦀 Zero-Cost Abstractions" icon="approve-check">
+    No garbage collector, no runtime overhead, single static binary. Perfect for edge devices, embedded systems, and high-throughput servers.
+  </Card>
+</CardGrid>
+
+## Quick Start
+
+```rust
+use traitclaw::prelude::*;
+use traitclaw_openai_compat::OpenAiCompatProvider;
+
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    let agent = Agent::builder()
+        .provider(OpenAiCompatProvider::openai("gpt-4o-mini", api_key))
+        .system("You are a helpful assistant")
+        .build()?;
+
+    let output = agent.run("Hello!").await?;
+    println!("{}", output.text());
+    Ok(())
+}
+```
+
+## Explore
+
+<CardGrid>
+  <LinkCard title="Installation" href="/traitclaw/getting-started/installation/" description="Add TraitClaw to your project in 30 seconds." />
+  <LinkCard title="Core Concepts" href="/traitclaw/concepts/architecture/" description="Understand the trait-based architecture." />
+  <LinkCard title="Guides" href="/traitclaw/guides/custom-provider/" description="Step-by-step tutorials for common tasks." />
+  <LinkCard title="API Reference" href="/traitclaw/reference/crate-ecosystem/" description="Complete crate and trait documentation." />
+</CardGrid>

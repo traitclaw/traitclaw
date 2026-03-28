@@ -1,0 +1,92 @@
+---
+title: Why Rust for AI Agents?
+description: The case for building AI agents in Rust instead of Python or TypeScript.
+---
+
+## The Problem with Dynamic Languages
+
+AI agent frameworks in Python and TypeScript share a fundamental issue: **runtime errors in production**.
+
+When your agent calls a tool, the LLM generates JSON arguments. In Python/TypeScript:
+
+1. The JSON might be malformed → **runtime crash**
+2. The arguments might be wrong types → **runtime crash**
+3. The tool function might not exist → **runtime crash**
+
+In Rust with TraitClaw:
+
+1. JSON schema is generated from types → **compile-time guarantee**
+2. Deserialization is type-checked → **compile-time guarantee**
+3. Tool registration is type-checked → **compile-time guarantee**
+
+## Why This Matters for Agents
+
+AI agents are **autonomous loops** — they make decisions and take actions without human oversight. A single runtime error can:
+
+- **Corrupt state** in long-running agent sessions
+- **Waste API costs** on failed tool calls that need retrying
+- **Break user trust** when the agent crashes mid-conversation
+- **Create security vulnerabilities** from unchecked inputs
+
+Rust's type system prevents entire categories of these errors.
+
+## Rust's Advantages for AI
+
+### 1. Memory Safety Without GC
+
+```rust
+// No null pointer exceptions, no use-after-free, no data races
+// All guaranteed at compile time by the borrow checker
+let agent = Agent::builder()
+    .provider(provider)  // Ownership transferred
+    .build()?;
+
+// agent.run() is safe to call from any async task
+```
+
+### 2. Fearless Concurrency
+
+Run thousands of agents simultaneously with zero data races:
+
+```rust
+// This is safe — Rust guarantees no data races
+let handles: Vec<_> = queries.iter().map(|q| {
+    let agent = agent.clone();
+    tokio::spawn(async move {
+        agent.run(q).await
+    })
+}).collect();
+```
+
+### 3. Zero-Cost Abstractions
+
+TraitClaw's trait system compiles to the same code as hand-written implementations:
+
+```rust
+// This generic code compiles to specialized machine code
+// No virtual dispatch overhead, no boxing, no heap allocation
+fn process<P: Provider>(provider: &P, messages: &[Message]) {
+    provider.generate(messages, config).await
+}
+```
+
+### 4. Single Binary Deployment
+
+```bash
+# Build once, deploy anywhere
+cargo build --release
+# Result: a single 5MB binary with zero dependencies
+scp target/release/my-agent server:/usr/local/bin/
+```
+
+Compare this to Python (`pip install + venv + 500MB dependencies`) or Node.js (`node_modules + runtime`).
+
+## The TraitClaw Approach
+
+TraitClaw doesn't try to make Rust feel like Python. Instead, it leverages Rust's strengths:
+
+- **Derive macros** (`#[derive(Tool)]`) replace boilerplate
+- **Builder pattern** makes configuration ergonomic
+- **Async/await** with Tokio for clean async code
+- **Trait objects** (`Box<dyn Tool>`) for runtime flexibility where needed
+- **Feature flags** for optional dependencies (compile only what you use)

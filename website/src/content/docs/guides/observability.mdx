@@ -1,0 +1,68 @@
+---
+title: Observability
+description: Tracing, lifecycle hooks, and structured logging.
+---
+
+TraitClaw integrates with Rust's `tracing` ecosystem for production-grade observability.
+
+## Tracing Integration
+
+TraitClaw emits `tracing` spans and events for every step of the agent loop:
+
+```rust
+use tracing_subscriber;
+
+tracing_subscriber::fmt()
+    .with_env_filter("traitclaw=debug")
+    .init();
+
+// All agent operations are now logged with structured tracing
+let output = agent.run("Hello").await?;
+```
+
+## Lifecycle Hooks
+
+The `AgentHook` trait lets you intercept every step:
+
+```rust
+use traitclaw_core::AgentHook;
+
+struct MetricsHook {
+    pub tool_calls: AtomicU64,
+    pub llm_calls: AtomicU64,
+}
+
+#[async_trait]
+impl AgentHook for MetricsHook {
+    async fn on_provider_start(&self, messages: &[Message]) {
+        self.llm_calls.fetch_add(1, Ordering::Relaxed);
+    }
+
+    async fn before_tool_execute(&self, name: &str, args: &Value) {
+        self.tool_calls.fetch_add(1, Ordering::Relaxed);
+        tracing::info!(tool = name, "Executing tool");
+    }
+
+    async fn on_stream_chunk(&self, event: &StreamEvent) {
+        // Process each streaming event
+    }
+}
+```
+
+```rust
+let agent = Agent::builder()
+    .provider(provider)
+    .hook(MetricsHook::default())
+    .build()?;
+```
+
+## Built-in: LoggingHook
+
+```rust
+use traitclaw_core::LoggingHook;
+
+let agent = Agent::builder()
+    .provider(provider)
+    .hook(LoggingHook::new())
+    .build()?;
+```

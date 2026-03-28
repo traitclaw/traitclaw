@@ -1,0 +1,128 @@
+---
+title: Providers
+description: LLM backends — OpenAI, Anthropic, Ollama, and custom implementations.
+---
+
+A **Provider** is TraitClaw's abstraction over LLM backends. Any service that can generate text from a conversation can implement the `Provider` trait.
+
+## Built-in Providers
+
+| Provider | Crate | Models |
+|----------|-------|--------|
+| **OpenAI-Compatible** | `traitclaw-openai-compat` | GPT-4o, GPT-4o-mini, Ollama, Groq, Mistral, vLLM |
+| **Native OpenAI** | `traitclaw-openai` | GPT-4o with structured output, function calling |
+| **Anthropic** | `traitclaw-anthropic` | Claude Sonnet, Haiku, Opus |
+
+## The Provider Trait
+
+```rust
+#[async_trait]
+pub trait Provider: Send + Sync {
+    /// Generate a completion from the given messages
+    async fn generate(
+        &self,
+        messages: &[Message],
+        config: &AgentConfig,
+    ) -> Result<CompletionResponse>;
+
+    /// Stream a completion as a series of events
+    async fn stream(
+        &self,
+        messages: &[Message],
+        config: &AgentConfig,
+    ) -> Result<BoxStream<'static, Result<StreamEvent>>>;
+
+    /// Return model information (name, context window, capabilities)
+    fn model_info(&self) -> ModelInfo;
+}
+```
+
+## Usage Examples
+
+### OpenAI via OpenAI-Compatible
+
+```rust
+use traitclaw_openai_compat::OpenAiCompatProvider;
+
+// OpenAI
+let provider = OpenAiCompatProvider::openai("gpt-4o-mini", api_key);
+
+// Ollama (local)
+let provider = OpenAiCompatProvider::ollama("llama3.2");
+
+// Groq
+let provider = OpenAiCompatProvider::groq("llama-3.3-70b-versatile", api_key);
+
+// Any OpenAI-compatible endpoint
+let provider = OpenAiCompatProvider::new(
+    "https://api.together.xyz/v1",
+    "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo",
+    api_key,
+);
+```
+
+### Anthropic
+
+```rust
+use traitclaw_anthropic::AnthropicProvider;
+
+let provider = AnthropicProvider::new("claude-sonnet-4-20250514", api_key);
+```
+
+## Building a Custom Provider
+
+Implement `Provider` for any LLM backend:
+
+```rust
+use traitclaw_core::prelude::*;
+
+struct MyCustomProvider {
+    endpoint: String,
+    client: reqwest::Client,
+}
+
+#[async_trait::async_trait]
+impl Provider for MyCustomProvider {
+    async fn generate(
+        &self,
+        messages: &[Message],
+        config: &AgentConfig,
+    ) -> Result<CompletionResponse> {
+        // 1. Convert TraitClaw messages to your API format
+        // 2. Make the HTTP request
+        // 3. Parse the response into CompletionResponse
+        todo!()
+    }
+
+    async fn stream(
+        &self,
+        messages: &[Message],
+        config: &AgentConfig,
+    ) -> Result<BoxStream<'static, Result<StreamEvent>>> {
+        // Return a stream of StreamEvent items
+        todo!()
+    }
+
+    fn model_info(&self) -> ModelInfo {
+        ModelInfo {
+            name: "my-model".into(),
+            context_window: 128_000,
+            ..Default::default()
+        }
+    }
+}
+```
+
+## Retry & Resilience
+
+Wrap any provider with automatic retry:
+
+```rust
+use traitclaw_core::RetryProvider;
+
+let provider = RetryProvider::new(
+    OpenAiCompatProvider::openai("gpt-4o", api_key),
+)
+.max_retries(3)
+.base_delay(Duration::from_secs(1));
+```

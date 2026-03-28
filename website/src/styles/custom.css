@@ -1,0 +1,39 @@
+/* TraitClaw Docs — Custom Starlight Theme */
+
+:root {
+	--sl-color-accent-low: #1a1f36;
+	--sl-color-accent: #e06c40;
+	--sl-color-accent-high: #ffd4c0;
+	--sl-color-white: #ffffff;
+	--sl-color-gray-1: #e0e4ef;
+	--sl-color-gray-2: #b9bfd4;
+	--sl-color-gray-3: #7c84a0;
+	--sl-color-gray-4: #464e6e;
+	--sl-color-gray-5: #2a2f46;
+	--sl-color-gray-6: #1a1f36;
+	--sl-color-black: #12152a;
+	--sl-font: 'Inter', system-ui, sans-serif;
+	--sl-font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+:root[data-theme='dark'] {
+	--sl-color-accent-low: #2a1a10;
+	--sl-color-accent: #e06c40;
+	--sl-color-accent-high: #ffd4c0;
+}
+
+/* Hero section customization */
+.hero {
+	padding: 3rem 0;
+}
+
+/* Code blocks styling */
+starlight-code code {
+	font-size: 0.9rem;
+	line-height: 1.7;
+}
+
+/* Badge styling for feature status */
+.sl-badge {
+	font-weight: 600;
+}

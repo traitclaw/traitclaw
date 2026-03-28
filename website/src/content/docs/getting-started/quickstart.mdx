@@ -1,0 +1,134 @@
+---
+title: Quick Start
+description: Build your first AI agent in 5 minutes.
+---
+
+## Your First Agent
+
+Create a new Rust project and add TraitClaw:
+
+```bash
+cargo init my-agent && cd my-agent
+cargo add traitclaw traitclaw-openai-compat tokio anyhow
+```
+
+Replace `src/main.rs`:
+
+```rust
+use traitclaw::prelude::*;
+use traitclaw_openai_compat::OpenAiCompatProvider;
+
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    let api_key = std::env::var("OPENAI_API_KEY")?;
+
+    let agent = Agent::builder()
+        .provider(OpenAiCompatProvider::openai("gpt-4o-mini", &api_key))
+        .system("You are a helpful assistant who speaks concisely.")
+        .build()?;
+
+    let output = agent.run("What is Rust's ownership model?").await?;
+    println!("{}", output.text());
+    Ok(())
+}
+```
+
+```bash
+export OPENAI_API_KEY="sk-..."
+cargo run
+```
+
+## Adding Tools
+
+Tools let your agent interact with the real world. Use `#[derive(Tool)]` for type-safe tools:
+
+```rust
+use traitclaw::prelude::*;
+use schemars::JsonSchema;
+use serde::Deserialize;
+
+#[derive(Tool)]
+#[tool(description = "Calculate the result of a math expression")]
+struct Calculator {
+    /// The math expression to evaluate (e.g., "2 + 2")
+    expression: String,
+}
+
+#[async_trait::async_trait]
+impl ToolExecute for Calculator {
+    type Output = String;
+
+    async fn execute(&self) -> Result<Self::Output, ToolError> {
+        // In production, use a proper math parser
+        Ok(format!("The result of {} is 42", self.expression))
+    }
+}
+```
+
+Then add it to your agent:
+
+```rust
+let agent = Agent::builder()
+    .provider(provider)
+    .system("You are a math assistant. Use the calculator tool.")
+    .tool(Calculator)
+    .build()?;
+
+let output = agent.run("What is 15 * 23?").await?;
+```
+
+The agent will automatically:
+1. Recognize it needs the calculator
+2. Generate the correct JSON arguments
+3. Execute the tool
+4. Use the result to form its response
+
+## Streaming Responses
+
+For real-time output:
+
+```rust
+use futures::StreamExt;
+
+let mut stream = agent.stream("Tell me a story about a Rust developer");
+while let Some(Ok(event)) = stream.next().await {
+    match event {
+        StreamEvent::TextDelta(text) => print!("{text}"),
+        StreamEvent::ToolStart { name, .. } => println!("\n🔧 Using: {name}"),
+        StreamEvent::Done(output) => println!("\n\n✅ Done: {} tokens", output.usage().total_tokens),
+        _ => {}
+    }
+}
+```
+
+## Structured Output
+
+Extract typed data from LLM responses:
+
+```rust
+use serde::Deserialize;
+use schemars::JsonSchema;
+
+#[derive(Deserialize, JsonSchema)]
+struct MovieReview {
+    title: String,
+    rating: u8,
+    summary: String,
+    pros: Vec<String>,
+    cons: Vec<String>,
+}
+
+let review: MovieReview = agent.run_structured("Review the movie Inception").await?;
+println!("{}: {}/10 — {}", review.title, review.rating, review.summary);
+```
+
+## What's Next?
+
+import { CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+<CardGrid>
+  <LinkCard title="Architecture" href="/traitclaw/concepts/architecture/" description="Understand the trait system" />
+  <LinkCard title="Tools Deep Dive" href="/traitclaw/concepts/tools/" description="Advanced tool patterns" />
+  <LinkCard title="Memory" href="/traitclaw/concepts/memory/" description="Persistent conversations" />
+  <LinkCard title="Multi-Agent Teams" href="/traitclaw/guides/multi-agent/" description="Agent orchestration" />
+</CardGrid>

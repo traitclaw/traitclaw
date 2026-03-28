@@ -1,0 +1,68 @@
+---
+title: Steering
+description: Guards, Hints, and Trackers for safe, guided agent behavior.
+---
+
+**Steering** is TraitClaw's safety and guidance system. It consists of three complementary traits that work together to keep agents safe, guided, and observable.
+
+## The Three Pillars
+
+| Component | Purpose | When it runs |
+|-----------|---------|-------------|
+| **Guard** | Prevent dangerous actions | Before tool execution |
+| **Hint** | Inject guidance into context | Before LLM generation |
+| **Tracker** | Collect metrics and adapt | After each step |
+
+## One-Line Setup
+
+```rust
+use traitclaw_steering::Steering;
+
+let agent = Agent::builder()
+    .provider(provider)
+    .steering(Steering::auto())  // All guards + hints + tracking
+    .build()?;
+```
+
+## Built-in Guards
+
+| Guard | Protection |
+|-------|-----------|
+| `ShellDenyGuard` | Blocks shell command execution |
+| `LoopDetectionGuard` | Detects infinite reasoning loops |
+| `RateLimitGuard` | Limits requests per time window |
+| `ToolBudgetGuard` | Limits total tool calls per session |
+| `ContentFilterGuard` | Filters harmful content patterns |
+| `PromptInjectionGuard` | Detects prompt injection attempts |
+| `WorkspaceBoundaryGuard` | Restricts file access to workspace |
+
+## Built-in Hints
+
+| Hint | Guidance |
+|------|---------|
+| `BudgetHint` | Injects remaining token budget awareness |
+| `SystemPromptReminder` | Re-injects system prompt periodically |
+| `TruncationHint` | Warns when context is being truncated |
+| `TeamProgressHint` | Reports multi-agent team progress |
+
+## Custom Guards
+
+```rust
+use traitclaw_core::Guard;
+
+struct MaxCostGuard {
+    max_dollars: f64,
+    spent: AtomicF64,
+}
+
+#[async_trait]
+impl Guard for MaxCostGuard {
+    async fn check(&self, action: &AgentAction) -> GuardResult {
+        if self.spent.load() > self.max_dollars {
+            GuardResult::Deny("Cost budget exceeded".into())
+        } else {
+            GuardResult::Allow
+        }
+    }
+}
+```

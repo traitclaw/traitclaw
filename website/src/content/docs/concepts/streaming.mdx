@@ -1,0 +1,58 @@
+---
+title: Streaming
+description: Real-time streaming responses with typed events.
+---
+
+TraitClaw provides first-class streaming via `async Stream` with strongly-typed events.
+
+## Basic Streaming
+
+```rust
+use futures::StreamExt;
+
+let mut stream = agent.stream("Tell me about Rust's type system");
+
+while let Some(Ok(event)) = stream.next().await {
+    match event {
+        StreamEvent::TextDelta(text) => print!("{text}"),
+        StreamEvent::Done(output) => {
+            println!("\n\nTokens used: {}", output.usage().total_tokens);
+        }
+        _ => {}
+    }
+}
+```
+
+## Stream Events
+
+| Event | Description |
+|-------|-------------|
+| `TextDelta(String)` | New text chunk from the LLM |
+| `ToolStart { name, id }` | Agent is about to call a tool |
+| `ToolEnd { id, result }` | Tool execution completed |
+| `ThoughtStep(ThoughtStep)` | Strategy reasoning step (ReAct/CoT) |
+| `Done(AgentOutput)` | Stream complete with final output |
+| `Error(Error)` | An error occurred |
+
+## With Tool Calling
+
+When the agent uses tools during streaming, you get full visibility:
+
+```rust
+while let Some(Ok(event)) = stream.next().await {
+    match event {
+        StreamEvent::TextDelta(text) => print!("{text}"),
+        StreamEvent::ToolStart { name, .. } => {
+            println!("\n🔧 Calling tool: {name}...");
+        }
+        StreamEvent::ToolEnd { result, .. } => {
+            println!("   Result: {}", result.content);
+        }
+        StreamEvent::ThoughtStep(step) => {
+            println!("💭 {}: {}", step.step_type, step.content);
+        }
+        StreamEvent::Done(_) => println!("\n✅ Complete"),
+        _ => {}
+    }
+}
+```
