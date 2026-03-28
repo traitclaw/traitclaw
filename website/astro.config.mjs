@@ -11,8 +11,8 @@ export default defineConfig({
 			title: 'TraitClaw',
 			description: 'A Rust AI Agent Framework — Simple by default, powerful when needed.',
 			logo: {
-				dark: './src/assets/logo-dark.svg',
-				light: './src/assets/logo-light.svg',
+				dark: './src/assets/logo-dark.png',
+				light: './src/assets/logo-light.png',
 				replacesTitle: false,
 			},
 			social: [
